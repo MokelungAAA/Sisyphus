@@ -142,7 +142,10 @@ fun SisyphusApp() {
             }
             composable("pomodoro") {
                 val viewModel: PomodoroViewModel = koinViewModel()
-                PomodoroScreen(viewModel = viewModel)
+                PomodoroScreen(
+                    viewModel = viewModel,
+                    onNavigateToHistory = { navController.navigate("log") }
+                )
             }
             composable("subject/{subjectId}") { backStackEntry ->
                 val viewModel: SubjectDetailViewModel = koinViewModel()

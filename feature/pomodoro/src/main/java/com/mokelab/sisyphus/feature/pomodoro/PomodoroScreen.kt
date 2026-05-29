@@ -1,29 +1,30 @@
 package com.mokelab.sisyphus.feature.pomodoro
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mokelab.sisyphus.core.ui.theme.PomodoroGreen
-import com.mokelab.sisyphus.core.ui.theme.PomodoroRed
+import com.mokelab.sisyphus.core.ui.theme.*
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PomodoroScreen(
+    onNavigateToHistory: () -> Unit = {},
     viewModel: PomodoroViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -35,6 +36,11 @@ fun PomodoroScreen(
                     Text(if (uiState.isOnBreak) "休息时间" else "番茄钟")
                 },
                 actions = {
+                    // 历史按钮
+                    IconButton(onClick = onNavigateToHistory) {
+                        Icon(Icons.Default.List, contentDescription = "历史记录")
+                    }
+                    // 预设设置
                     if (!uiState.isRunning && !uiState.isPaused) {
                         IconButton(onClick = { viewModel.showPresetSelector() }) {
                             Icon(Icons.Default.Settings, contentDescription = "预设设置")
@@ -47,80 +53,122 @@ fun PomodoroScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(padding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Subject or break label
-            Text(
-                text = when {
-                    uiState.isOnBreak -> uiState.currentSubjectName.ifEmpty { "休息" }
-                    uiState.currentSubjectName.isNotEmpty() -> uiState.currentSubjectName
-                    else -> uiState.selectedPreset.name
-                },
-                style = MaterialTheme.typography.titleMedium,
-                color = if (uiState.isOnBreak) PomodoroGreen else MaterialTheme.colorScheme.onSurfaceVariant
+            // 今日数据顶部展示
+            TodayStatsCard(
+                completedToday = uiState.completedSessions,
+                totalMinutesToday = uiState.completedSessions * uiState.selectedPreset.focusMinutes
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 环形进度 + 计时器
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(240.dp)
+            ) {
+                CircularPomodoroProgress(
+                    progress = if (uiState.totalSeconds > 0) {
+                        1f - (uiState.remainingSeconds.toFloat() / uiState.totalSeconds)
+                    } else 0f,
+                    isOnBreak = uiState.isOnBreak,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // 时间显示
+                    val minutes = uiState.remainingSeconds / 60
+                    val seconds = uiState.remainingSeconds % 60
+                    Text(
+                        text = "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}",
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            fontSize = 56.sp,
+                            fontWeight = FontWeight.Light
+                        ),
+                        color = if (uiState.isOnBreak) PomodoroGreen else PomodoroRed
+                    )
+
+                    // 状态标签
+                    Text(
+                        text = when {
+                            uiState.isOnBreak -> "休息中"
+                            uiState.isRunning -> "专注中"
+                            uiState.isPaused -> "已暂停"
+                            else -> "准备开始"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Timer display
-            val minutes = uiState.remainingSeconds / 60
-            val seconds = uiState.remainingSeconds % 60
+            // 当前关联学科
+            if (uiState.currentSubjectName.isNotEmpty()) {
+                Text(
+                    text = uiState.currentSubjectName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // 预设信息
             Text(
-                text = "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}",
-                style = MaterialTheme.typography.displayLarge.copy(
-                    fontSize = 72.sp,
-                    fontWeight = FontWeight.Light
-                ),
-                color = if (uiState.isOnBreak) PomodoroGreen else PomodoroRed
+                text = "${uiState.selectedPreset.name} · ${uiState.selectedPreset.focusMinutes}/${uiState.selectedPreset.breakMinutes}分钟",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Progress indicator
-            LinearProgressIndicator(
-                progress = {
-                    if (uiState.totalSeconds > 0) {
-                        1f - (uiState.remainingSeconds.toFloat() / uiState.totalSeconds)
-                    } else 0f
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                color = if (uiState.isOnBreak) PomodoroGreen else PomodoroRed
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Controls
+            // 操作按钮
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (!uiState.isRunning && !uiState.isPaused) {
-                    Button(onClick = { viewModel.startTimer() }) {
+                    Button(
+                        onClick = { viewModel.startTimer() },
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Icon(Icons.Default.PlayArrow, contentDescription = "开始")
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("开始")
+                        Text("开始专注")
                     }
                 } else if (uiState.isPaused) {
-                    Button(onClick = { viewModel.resumeTimer() }) {
+                    Button(
+                        onClick = { viewModel.resumeTimer() },
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Icon(Icons.Default.PlayArrow, contentDescription = "继续")
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("继续")
                     }
-                    OutlinedButton(onClick = { viewModel.stopTimer() }) {
+                    OutlinedButton(
+                        onClick = { viewModel.stopTimer() },
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Icon(Icons.Default.Close, contentDescription = "停止")
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("停止")
                     }
                 } else {
-                    Button(onClick = { viewModel.pauseTimer() }) {
+                    Button(
+                        onClick = { viewModel.pauseTimer() },
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Icon(Icons.Default.Refresh, contentDescription = "暂停")
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("暂停")
                     }
-                    OutlinedButton(onClick = { viewModel.stopTimer() }) {
+                    OutlinedButton(
+                        onClick = { viewModel.stopTimer() },
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Icon(Icons.Default.Close, contentDescription = "停止")
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("停止")
@@ -130,15 +178,13 @@ fun PomodoroScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Completed sessions
-            Text(
-                text = "已完成 ${uiState.completedSessions} 个番茄",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Session progress dots
+            // 番茄组进度点
             if (uiState.completedSessions > 0 || uiState.isRunning) {
+                Text(
+                    text = "已完成 ${uiState.completedSessions} 个番茄",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 SessionDots(
                     completed = uiState.completedSessions % 4,
@@ -148,7 +194,7 @@ fun PomodoroScreen(
         }
     }
 
-    // Completion animation dialog
+    // 完成动画弹窗
     if (uiState.showCompletionAnimation) {
         CompletionDialog(
             completedSessions = uiState.completedSessions,
@@ -167,12 +213,101 @@ fun PomodoroScreen(
         )
     }
 
-    // Preset selector dialog
+    // 预设选择弹窗
     if (uiState.showPresetSelector) {
         PresetSelectorDialog(
             currentPreset = uiState.selectedPreset,
             onSelect = { viewModel.selectPreset(it) },
             onDismiss = { viewModel.hidePresetSelector() }
+        )
+    }
+}
+
+/**
+ * 今日数据卡片
+ */
+@Composable
+private fun TodayStatsCard(completedToday: Int, totalMinutesToday: Int) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "$completedToday",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = PomodoroRed
+                )
+                Text(
+                    text = "今日番茄",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "${totalMinutesToday}min",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = PomodoroRed
+                )
+                Text(
+                    text = "专注时长",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 环形进度指示器
+ */
+@Composable
+private fun CircularPomodoroProgress(
+    progress: Float,
+    isOnBreak: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val trackColor = MaterialTheme.colorScheme.outlineVariant
+    val progressColor = if (isOnBreak) PomodoroGreen else PomodoroRed
+
+    Canvas(modifier = modifier) {
+        val strokeWidth = 12.dp.toPx()
+        val diameter = size.minDimension - strokeWidth
+        val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
+        val arcSize = Size(diameter, diameter)
+
+        // 背景轨道
+        drawArc(
+            color = trackColor,
+            startAngle = -90f,
+            sweepAngle = 360f,
+            useCenter = false,
+            topLeft = topLeft,
+            size = arcSize,
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+        )
+
+        // 进度弧
+        drawArc(
+            color = progressColor,
+            startAngle = -90f,
+            sweepAngle = 360f * progress,
+            useCenter = false,
+            topLeft = topLeft,
+            size = arcSize,
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
         )
     }
 }
@@ -200,18 +335,6 @@ private fun CompletionDialog(
     onStartLongBreak: () -> Unit,
     onSkipBreak: () -> Unit
 ) {
-    // Pulsing animation
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = EaseInOutCubic),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "scale"
-    )
-
     AlertDialog(
         onDismissRequest = onSkipBreak,
         title = {
@@ -309,7 +432,6 @@ private fun PresetSelectorDialog(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // Custom preset option
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
