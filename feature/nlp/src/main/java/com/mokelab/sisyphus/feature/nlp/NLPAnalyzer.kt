@@ -112,6 +112,15 @@ class NLPAnalyzer {
             }
         }
 
+        // 5b. 检测听书类型
+        NLPRegexPatterns.AUDIOBOOK_PATTERN.find(text)?.let { match ->
+            entities["readingType"] = "AUDIOBOOK"
+            val bookName = match.groupValues[1].trim()
+            if (bookName.isNotEmpty() && !entities.containsKey("bookName")) {
+                entities["bookName"] = bookName
+            }
+        }
+
         // 6. 识别学习意图
         val intent = classifyIntent(text)
 
@@ -183,6 +192,7 @@ class NLPAnalyzer {
         "subject" -> "学科"
         "examType" -> "考试类型"
         "isFullMock" -> "全真模拟"
+        "readingType" -> "阅读类型"
         else -> key
     }
 
@@ -196,6 +206,7 @@ class NLPAnalyzer {
         "score" -> "${value}分"
         "examType" -> formatExamType(value)
         "isFullMock" -> "是"
+        "readingType" -> formatReadingType(value)
         else -> value
     }
 
@@ -205,6 +216,13 @@ class NLPAnalyzer {
         "FINAL" -> "期末"
         "MOCK" -> "模拟考"
         "SIMULATION" -> "小测"
+        else -> type
+    }
+
+    private fun formatReadingType(type: String): String = when (type) {
+        "BOOK" -> "📖 阅读"
+        "AUDIOBOOK" -> "🎧 听书"
+        "NOTES" -> "📝 笔记"
         else -> type
     }
 }

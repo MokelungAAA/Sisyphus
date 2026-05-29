@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mokelab.sisyphus.core.database.entity.ReadingRecordEntity
+import com.mokelab.sisyphus.core.database.entity.ReadingType
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -60,8 +61,8 @@ fun ReadingRecordListScreen(
     if (uiState.showAddDialog) {
         AddReadingRecordDialog(
             onDismiss = { viewModel.hideAddDialog() },
-            onConfirm = { bookName, author, duration, note ->
-                viewModel.addRecord(bookName, author, duration, note)
+            onConfirm = { bookName, author, type, duration, note ->
+                viewModel.addRecord(bookName, author, type, duration, note)
                 viewModel.hideAddDialog()
             }
         )
@@ -78,6 +79,11 @@ private fun ReadingRecordItem(
         val dt = record.createdAt.toLocalDateTime(TimeZone.currentSystemDefault())
         "${dt.date}"
     }
+    val typeLabel = when (record.readingType) {
+        ReadingType.BOOK -> "📖 阅读"
+        ReadingType.AUDIOBOOK -> "🎧 听书"
+        ReadingType.NOTES -> "📝 笔记"
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -90,15 +96,22 @@ private fun ReadingRecordItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = record.bookName, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
-                val author = record.author
-                if (author != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = author,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = typeLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    val author = record.author
+                    if (author != null) {
+                        Text(
+                            text = " · $author",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "${record.durationMinutes}分钟 · $date",
                     style = MaterialTheme.typography.bodySmall,
@@ -124,10 +137,11 @@ private fun ReadingRecordItem(
 @Composable
 private fun AddReadingRecordDialog(
     onDismiss: () -> Unit,
-    onConfirm: (bookName: String, author: String, duration: Int, note: String) -> Unit
+    onConfirm: (bookName: String, author: String, type: ReadingType, duration: Int, note: String) -> Unit
 ) {
     var bookName by remember { mutableStateOf("") }
     var author by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(ReadingType.BOOK) }
     var duration by remember { mutableStateOf("30") }
     var note by remember { mutableStateOf("") }
 
@@ -152,6 +166,22 @@ private fun AddReadingRecordDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+                Text("阅读类型", style = MaterialTheme.typography.bodyMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ReadingType.entries.forEach { type ->
+                        val label = when (type) {
+                            ReadingType.BOOK -> "📖 阅读"
+                            ReadingType.AUDIOBOOK -> "🎧 听书"
+                            ReadingType.NOTES -> "📝 笔记"
+                        }
+                        FilterChip(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = duration,
                     onValueChange = { duration = it.filter { c -> c.isDigit() } },
@@ -173,7 +203,7 @@ private fun AddReadingRecordDialog(
                 onClick = {
                     val dur = duration.toIntOrNull() ?: 30
                     if (bookName.isNotBlank()) {
-                        onConfirm(bookName, author, dur, note)
+                        onConfirm(bookName, author, selectedType, dur, note)
                     }
                 },
                 enabled = bookName.isNotBlank()

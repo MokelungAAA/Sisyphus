@@ -1,6 +1,7 @@
 package com.mokelab.sisyphus.core.database.converter
 
 import androidx.room.TypeConverter
+import com.mokelab.sisyphus.core.database.entity.ReadingType
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -28,5 +29,15 @@ class Converters {
     @TypeConverter
     fun localDateTimeToString(dateTime: LocalDateTime?): String? {
         return dateTime?.toString()
+    }
+
+    @TypeConverter
+    fun fromReadingType(value: ReadingType?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toReadingType(value: String?): ReadingType? {
+        return value?.let { ReadingType.valueOf(it) }
     }
 }

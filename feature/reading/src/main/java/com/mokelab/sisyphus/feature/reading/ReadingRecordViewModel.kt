@@ -3,6 +3,7 @@ package com.mokelab.sisyphus.feature.reading
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.entity.ReadingRecordEntity
+import com.mokelab.sisyphus.core.database.entity.ReadingType
 import com.mokelab.sisyphus.core.database.repository.ReadingRecordRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +42,7 @@ class ReadingRecordViewModel(
     fun addRecord(
         bookName: String,
         author: String,
+        readingType: ReadingType,
         durationMinutes: Int,
         note: String
     ) {
@@ -50,6 +52,7 @@ class ReadingRecordViewModel(
                 ReadingRecordEntity(
                     bookName = bookName,
                     author = author,
+                    readingType = readingType,
                     durationMinutes = durationMinutes,
                     startTime = now,
                     endTime = now,

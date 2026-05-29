@@ -13,7 +13,7 @@ val databaseModule = module {
             SisyphusDatabase::class.java,
             "sisyphus.db"
         )
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 
@@ -49,5 +49,11 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             )
         """)
         database.execSQL("CREATE INDEX IF NOT EXISTS `index_review_history_cardId` ON `review_history` (`cardId`)")
+    }
+}
+
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE `reading_records` ADD COLUMN `readingType` TEXT NOT NULL DEFAULT 'BOOK'")
     }
 }
