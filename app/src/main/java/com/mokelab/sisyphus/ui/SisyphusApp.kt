@@ -124,7 +124,7 @@ fun SisyphusApp() {
                 )
             }
             composable(Screen.Search.route) {
-                SearchScreen()
+                SearchScreen(navController = navController)
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(

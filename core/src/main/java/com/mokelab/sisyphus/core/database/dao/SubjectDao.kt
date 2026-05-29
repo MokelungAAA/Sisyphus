@@ -35,4 +35,7 @@ interface SubjectDao {
 
     @Query("SELECT * FROM subjects WHERE updatedAt > :since")
     suspend fun getModifiedSince(since: Instant): List<SubjectEntity>
+
+    @Query("SELECT * FROM subjects WHERE name LIKE '%' || :query || '%'")
+    suspend fun search(query: String): List<SubjectEntity>
 }

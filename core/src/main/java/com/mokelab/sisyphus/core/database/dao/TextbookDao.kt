@@ -32,4 +32,7 @@ interface TextbookDao {
 
     @Query("SELECT * FROM textbooks WHERE updatedAt > :since")
     suspend fun getModifiedSince(since: Instant): List<TextbookEntity>
+
+    @Query("SELECT * FROM textbooks WHERE name LIKE '%' || :query || '%'")
+    suspend fun search(query: String): List<TextbookEntity>
 }

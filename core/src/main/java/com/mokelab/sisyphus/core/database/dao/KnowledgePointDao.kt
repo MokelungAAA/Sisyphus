@@ -32,4 +32,7 @@ interface KnowledgePointDao {
 
     @Query("SELECT * FROM knowledge_points WHERE updatedAt > :since")
     suspend fun getModifiedSince(since: Instant): List<KnowledgePointEntity>
+
+    @Query("SELECT * FROM knowledge_points WHERE name LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%'")
+    suspend fun search(query: String): List<KnowledgePointEntity>
 }

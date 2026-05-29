@@ -32,4 +32,7 @@ interface SectionDao {
 
     @Query("SELECT * FROM sections WHERE updatedAt > :since")
     suspend fun getModifiedSince(since: Instant): List<SectionEntity>
+
+    @Query("SELECT * FROM sections WHERE name LIKE '%' || :query || '%'")
+    suspend fun search(query: String): List<SectionEntity>
 }

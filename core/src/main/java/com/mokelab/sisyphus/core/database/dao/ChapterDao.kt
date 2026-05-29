@@ -32,4 +32,7 @@ interface ChapterDao {
 
     @Query("SELECT * FROM chapters WHERE updatedAt > :since")
     suspend fun getModifiedSince(since: Instant): List<ChapterEntity>
+
+    @Query("SELECT * FROM chapters WHERE name LIKE '%' || :query || '%'")
+    suspend fun search(query: String): List<ChapterEntity>
 }

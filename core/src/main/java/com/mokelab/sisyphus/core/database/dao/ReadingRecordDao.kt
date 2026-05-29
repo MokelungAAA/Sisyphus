@@ -32,4 +32,7 @@ interface ReadingRecordDao {
 
     @Query("SELECT * FROM reading_records WHERE updatedAt > :since")
     suspend fun getModifiedSince(since: Instant): List<ReadingRecordEntity>
+
+    @Query("SELECT * FROM reading_records WHERE bookName LIKE '%' || :query || '%' OR author LIKE '%' || :query || '%' OR note LIKE '%' || :query || '%' ORDER BY createdAt DESC")
+    suspend fun search(query: String): List<ReadingRecordEntity>
 }

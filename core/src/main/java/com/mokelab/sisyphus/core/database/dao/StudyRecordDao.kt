@@ -35,4 +35,7 @@ interface StudyRecordDao {
 
     @Query("SELECT * FROM study_records WHERE updatedAt > :since")
     suspend fun getModifiedSince(since: Instant): List<StudyRecordEntity>
+
+    @Query("SELECT * FROM study_records WHERE note LIKE '%' || :query || '%' ORDER BY createdAt DESC")
+    suspend fun search(query: String): List<StudyRecordEntity>
 }
