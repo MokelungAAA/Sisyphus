@@ -1,15 +1,19 @@
 package com.mokelab.sisyphus.feature.pomodoro
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.entity.PomodoroSessionEntity
 import com.mokelab.sisyphus.core.database.entity.PresetType
 import com.mokelab.sisyphus.core.database.repository.PomodoroSessionRepository
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
@@ -20,103 +24,154 @@ data class PomodoroUiState(
     val totalSeconds: Int = 25 * 60,
     val completedSessions: Int = 0,
     val currentSubjectId: Long = 0,
-    val showSettings: Boolean = false
+    val currentSubjectName: String = "",
+    val selectedPreset: PomodoroPreset = PomodoroPresets.CLASSIC,
+    val showSettings: Boolean = false,
+    val showPresetSelector: Boolean = false,
+    val isBound: Boolean = false
 )
 
 class PomodoroViewModel(
-    private val repository: PomodoroSessionRepository
+    private val repository: PomodoroSessionRepository,
+    private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PomodoroUiState())
     val uiState: StateFlow<PomodoroUiState> = _uiState.asStateFlow()
 
-    private var timerJob: Job? = null
+    private var pomodoroService: PomodoroService? = null
+    private var isBound = false
 
-    fun setSubject(subjectId: Long) {
-        _uiState.value = _uiState.value.copy(currentSubjectId = subjectId)
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as PomodoroService.PomodoroBinder
+            pomodoroService = binder.getService()
+            isBound = true
+
+            pomodoroService?.setOnCompleteListener {
+                onTimerComplete()
+            }
+
+            // Sync state from service
+            pomodoroService?.let { svc ->
+                viewModelScope.launch {
+                    svc.state.collect { serviceState ->
+                        _uiState.update {
+                            it.copy(
+                                isRunning = serviceState.isRunning,
+                                isPaused = serviceState.isPaused,
+                                remainingSeconds = serviceState.remainingSeconds,
+                                completedSessions = serviceState.completedSessions
+                            )
+                        }
+                    }
+                }
+            }
+
+            _uiState.update { it.copy(isBound = true) }
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            pomodoroService = null
+            isBound = false
+            _uiState.update { it.copy(isBound = false) }
+        }
     }
 
-    fun startTimer(minutes: Int = 25) {
-        timerJob?.cancel()
-        _uiState.value = _uiState.value.copy(
-            isRunning = true,
-            isPaused = false,
-            remainingSeconds = minutes * 60,
-            totalSeconds = minutes * 60
-        )
-        timerJob = viewModelScope.launch {
-            while (_uiState.value.remainingSeconds > 0) {
-                delay(1000)
-                _uiState.value = _uiState.value.copy(
-                    remainingSeconds = _uiState.value.remainingSeconds - 1
-                )
-            }
-            completeSession()
+    init {
+        bindService()
+    }
+
+    private fun bindService() {
+        val intent = Intent(context, PomodoroService::class.java)
+        context.startService(intent)
+        context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+    }
+
+    fun setSubject(subjectId: Long, subjectName: String) {
+        _uiState.update { it.copy(currentSubjectId = subjectId, currentSubjectName = subjectName) }
+    }
+
+    fun selectPreset(preset: PomodoroPreset) {
+        _uiState.update {
+            it.copy(
+                selectedPreset = preset,
+                totalSeconds = preset.focusMinutes * 60,
+                remainingSeconds = preset.focusMinutes * 60,
+                showPresetSelector = false
+            )
         }
+    }
+
+    fun startTimer() {
+        val state = _uiState.value
+        pomodoroService?.startTimer(
+            subjectId = state.currentSubjectId,
+            subjectName = state.currentSubjectName,
+            durationMinutes = state.selectedPreset.focusMinutes
+        )
     }
 
     fun pauseTimer() {
-        timerJob?.cancel()
-        _uiState.value = _uiState.value.copy(isPaused = true)
+        pomodoroService?.pauseTimer()
     }
 
     fun resumeTimer() {
-        _uiState.value = _uiState.value.copy(isPaused = false)
-        timerJob = viewModelScope.launch {
-            while (_uiState.value.remainingSeconds > 0) {
-                delay(1000)
-                _uiState.value = _uiState.value.copy(
-                    remainingSeconds = _uiState.value.remainingSeconds - 1
-                )
-            }
-            completeSession()
-        }
+        pomodoroService?.resumeTimer()
     }
 
     fun stopTimer() {
-        timerJob?.cancel()
-        _uiState.value = _uiState.value.copy(
-            isRunning = false,
-            isPaused = false,
-            remainingSeconds = _uiState.value.totalSeconds
-        )
+        pomodoroService?.stopTimer()
     }
 
-    private fun completeSession() {
+    private fun onTimerComplete() {
         viewModelScope.launch {
+            val state = _uiState.value
             val now = Clock.System.now()
+            val presetType = when (state.selectedPreset) {
+                PomodoroPresets.CLASSIC -> PresetType.CLASSIC
+                PomodoroPresets.SHORT -> PresetType.SHORT
+                PomodoroPresets.LONG -> PresetType.LONG
+                else -> PresetType.CUSTOM
+            }
+
             repository.insert(
                 PomodoroSessionEntity(
-                    subjectId = _uiState.value.currentSubjectId,
+                    subjectId = state.currentSubjectId,
                     studyRecordId = null,
-                    durationMinutes = _uiState.value.totalSeconds / 60,
-                    actualMinutes = _uiState.value.totalSeconds / 60,
+                    durationMinutes = state.selectedPreset.focusMinutes,
+                    actualMinutes = state.selectedPreset.focusMinutes,
                     startTime = now,
                     endTime = now,
                     isCompleted = true,
-                    presetType = PresetType.CUSTOM,
+                    presetType = presetType,
                     createdAt = now
                 )
-            )
-            _uiState.value = _uiState.value.copy(
-                isRunning = false,
-                isPaused = false,
-                completedSessions = _uiState.value.completedSessions + 1,
-                remainingSeconds = _uiState.value.totalSeconds
             )
         }
     }
 
     fun showSettings() {
-        _uiState.value = _uiState.value.copy(showSettings = true)
+        _uiState.update { it.copy(showSettings = true) }
     }
 
     fun hideSettings() {
-        _uiState.value = _uiState.value.copy(showSettings = false)
+        _uiState.update { it.copy(showSettings = false) }
+    }
+
+    fun showPresetSelector() {
+        _uiState.update { it.copy(showPresetSelector = true) }
+    }
+
+    fun hidePresetSelector() {
+        _uiState.update { it.copy(showPresetSelector = false) }
     }
 
     override fun onCleared() {
         super.onCleared()
-        timerJob?.cancel()
+        if (isBound) {
+            context.unbindService(serviceConnection)
+            isBound = false
+        }
     }
 }

@@ -11,6 +11,8 @@ import kotlinx.datetime.Instant
  */
 enum class PresetType {
     CLASSIC,
+    SHORT,
+    LONG,
     CUSTOM
 }
 
