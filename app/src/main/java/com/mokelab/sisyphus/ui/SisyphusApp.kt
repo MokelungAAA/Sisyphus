@@ -128,8 +128,10 @@ fun SisyphusApp() {
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
                     onNavigateToSync = { navController.navigate("sync") },
-                    onNavigateToAchievement = { navController.navigate("achievement") }
+                    onNavigateToAchievement = { navController.navigate("achievement") },
+                    onNavigateToAbout = { /* TODO: Navigate to about screen */ }
                 )
             }
 

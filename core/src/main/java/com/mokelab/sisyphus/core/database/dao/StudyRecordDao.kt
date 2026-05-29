@@ -50,4 +50,7 @@ interface StudyRecordDao {
 
     @Query("SELECT * FROM study_records WHERE createdAt BETWEEN :startTime AND :endTime")
     suspend fun getRecordsBetween(startTime: Long, endTime: Long): List<StudyRecordEntity>
+
+    @Query("SELECT * FROM study_records")
+    suspend fun getAllList(): List<StudyRecordEntity>
 }

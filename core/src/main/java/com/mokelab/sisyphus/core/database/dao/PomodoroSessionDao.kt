@@ -38,4 +38,7 @@ interface PomodoroSessionDao {
 
     @Query("SELECT COUNT(*) FROM pomodoro_sessions")
     suspend fun getCount(): Int
+
+    @Query("SELECT * FROM pomodoro_sessions")
+    suspend fun getAllList(): List<PomodoroSessionEntity>
 }

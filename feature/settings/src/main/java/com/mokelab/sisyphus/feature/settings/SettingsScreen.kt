@@ -1,10 +1,15 @@
 package com.mokelab.sisyphus.feature.settings
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,116 +17,180 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    onNavigateBack: () -> Unit = {},
     onNavigateToSync: () -> Unit = {},
-    onNavigateToAchievement: () -> Unit = {}
+    onNavigateToAchievement: () -> Unit = {},
+    onNavigateToAbout: () -> Unit = {},
+    viewModel: DataExportImportViewModel = koinViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var isDarkMode by remember { mutableStateOf(false) }
+    var showPomodoroSettings by remember { mutableStateOf(false) }
+
+    // Export launcher
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        uri?.let { viewModel.exportToJson(it) }
+    }
+
+    // Import launcher
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.importFromJson(it) }
+    }
+
+    // Show messages
+    LaunchedEffect(uiState.message, uiState.error) {
+        if (uiState.message != null || uiState.error != null) {
+            kotlinx.coroutines.delay(3000)
+            viewModel.clearMessage()
+        }
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("设置") })
+            TopAppBar(
+                title = { Text("设置") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    }
+                }
+            )
         }
-    ) { padding ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            // 主题设置
+            // Message bar
+            uiState.message?.let { message ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Text(
+                        text = message,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+
+            uiState.error?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = error,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+
+            // Theme section
             SettingsSection(title = "主题") {
-                SettingsItem(
-                    icon = Icons.Default.Star,
+                SettingsSwitchItem(
                     title = "深色模式",
-                    subtitle = "跟随系统",
-                    onClick = { }
+                    subtitle = "手动切换深色/浅色主题",
+                    icon = Icons.Default.Star,
+                    checked = isDarkMode,
+                    onCheckedChange = { isDarkMode = it }
                 )
             }
 
-            // 数据同步
-            SettingsSection(title = "数据同步") {
-                SettingsItem(
-                    icon = Icons.Default.Refresh,
-                    title = "OneDrive同步",
-                    subtitle = "未连接",
-                    onClick = onNavigateToSync
-                )
-                SettingsItem(
-                    icon = Icons.Default.Share,
+            // Data section
+            SettingsSection(title = "数据") {
+                SettingsClickableItem(
                     title = "导出数据",
-                    subtitle = "导出JSON格式",
-                    onClick = { }
+                    subtitle = "导出所有数据为 JSON 文件",
+                    icon = Icons.Default.Share,
+                    onClick = { exportLauncher.launch("sisyphus_backup.json") },
+                    enabled = !uiState.isExporting
                 )
-                SettingsItem(
-                    icon = Icons.Default.Add,
+                SettingsClickableItem(
                     title = "导入数据",
-                    subtitle = "从JSON导入",
-                    onClick = { }
+                    subtitle = "从 JSON 文件恢复数据",
+                    icon = Icons.Default.Add,
+                    onClick = { importLauncher.launch(arrayOf("application/json")) },
+                    enabled = !uiState.isImporting
                 )
+                if (uiState.isExporting || uiState.isImporting) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    )
+                }
             }
 
-            // 番茄钟设置
+            // Pomodoro section
             SettingsSection(title = "番茄钟") {
-                SettingsItem(
+                SettingsClickableItem(
+                    title = "番茄钟设置",
+                    subtitle = "配置工作时长、休息时长等",
                     icon = Icons.Default.PlayArrow,
-                    title = "专注时长",
-                    subtitle = "25分钟",
-                    onClick = { }
-                )
-                SettingsItem(
-                    icon = Icons.Default.Refresh,
-                    title = "休息时长",
-                    subtitle = "5分钟",
-                    onClick = { }
-                )
-                SettingsItem(
-                    icon = Icons.Default.Star,
-                    title = "长休息时长",
-                    subtitle = "15分钟",
-                    onClick = { }
+                    onClick = { showPomodoroSettings = true }
                 )
             }
 
-            // 个人信息
+            // Personal info section
             SettingsSection(title = "个人信息") {
-                SettingsItem(
+                SettingsClickableItem(
+                    title = "编辑个人信息",
+                    subtitle = "修改昵称、年级等信息",
                     icon = Icons.Default.Person,
-                    title = "目标高考分数",
-                    subtitle = "650分",
-                    onClick = { }
-                )
-                SettingsItem(
-                    icon = Icons.Default.Star,
-                    title = "每日学习目标",
-                    subtitle = "4小时",
-                    onClick = { }
+                    onClick = { /* TODO */ }
                 )
             }
 
-            // 成就
+            // Achievement section
             SettingsSection(title = "游戏化") {
-                SettingsItem(
-                    icon = Icons.Default.ThumbUp,
+                SettingsClickableItem(
                     title = "成就系统",
                     subtitle = "查看已解锁成就",
+                    icon = Icons.Default.ThumbUp,
                     onClick = onNavigateToAchievement
                 )
             }
 
-            // 关于
+            // About section
             SettingsSection(title = "关于") {
-                SettingsItem(
+                SettingsClickableItem(
+                    title = "关于 Sisyphus",
+                    subtitle = "版本、开发者信息、致谢",
                     icon = Icons.Default.Info,
-                    title = "关于Sisyphus",
-                    subtitle = "v0.3.0",
-                    onClick = { }
+                    onClick = onNavigateToAbout
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+
+    // Pomodoro settings dialog
+    if (showPomodoroSettings) {
+        PomodoroSettingsDialog(onDismiss = { showPomodoroSettings = false })
     }
 }
 
@@ -135,31 +204,33 @@ private fun SettingsSection(
             text = title,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp)
         )
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
-            Column {
-                content()
-            }
+            Column(content = content)
         }
     }
 }
 
 @Composable
-private fun SettingsItem(
-    icon: ImageVector,
+private fun SettingsSwitchItem(
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    icon: ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable { onCheckedChange(!checked) }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -171,15 +242,101 @@ private fun SettingsItem(
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge
-            )
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
+}
+
+@Composable
+private fun SettingsClickableItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    enabled: Boolean = true
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled) { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            )
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun PomodoroSettingsDialog(onDismiss: () -> Unit) {
+    var workDuration by remember { mutableStateOf("25") }
+    var shortBreak by remember { mutableStateOf("5") }
+    var longBreak by remember { mutableStateOf("15") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("番茄钟设置") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = workDuration,
+                    onValueChange = { workDuration = it },
+                    label = { Text("工作时长（分钟）") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = shortBreak,
+                    onValueChange = { shortBreak = it },
+                    label = { Text("短休息（分钟）") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = longBreak,
+                    onValueChange = { longBreak = it },
+                    label = { Text("长休息（分钟）") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("保存")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }

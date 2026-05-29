@@ -41,4 +41,7 @@ interface ExamRecordDao {
 
     @Query("SELECT COUNT(*) FROM exam_records")
     suspend fun getCount(): Int
+
+    @Query("SELECT * FROM exam_records")
+    suspend fun getAllList(): List<ExamRecordEntity>
 }

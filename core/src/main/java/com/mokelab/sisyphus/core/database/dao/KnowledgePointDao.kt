@@ -35,4 +35,7 @@ interface KnowledgePointDao {
 
     @Query("SELECT * FROM knowledge_points WHERE name LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%'")
     suspend fun search(query: String): List<KnowledgePointEntity>
+
+    @Query("SELECT * FROM knowledge_points")
+    suspend fun getAllList(): List<KnowledgePointEntity>
 }

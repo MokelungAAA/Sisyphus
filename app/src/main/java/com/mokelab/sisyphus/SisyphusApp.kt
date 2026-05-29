@@ -12,6 +12,7 @@ import com.mokelab.sisyphus.feature.recommendation.recommendationModule
 import com.mokelab.sisyphus.feature.reading.ReadingModule
 import com.mokelab.sisyphus.feature.review.ReviewModule
 import com.mokelab.sisyphus.feature.achievement.AchievementModule
+import com.mokelab.sisyphus.feature.settings.SettingsModule
 import com.mokelab.sisyphus.feature.search.SearchModule
 import com.mokelab.sisyphus.feature.stats.statsModule
 import com.mokelab.sisyphus.feature.subject.SubjectModule
@@ -39,6 +40,7 @@ class SisyphusApp : Application() {
                 *ReviewModule().modules().toTypedArray(),
                 *SearchModule().modules().toTypedArray(),
                 *AchievementModule().modules().toTypedArray(),
+                *SettingsModule().modules().toTypedArray(),
                 nlpModule,
                 recommendationModule,
                 statsModule,

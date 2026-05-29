@@ -47,4 +47,7 @@ interface ReviewCardDao {
 
     @Query("SELECT * FROM review_cards WHERE updatedAt > :since")
     suspend fun getModifiedSince(since: Instant): List<ReviewCardEntity>
+
+    @Query("SELECT * FROM review_cards")
+    suspend fun getAllList(): List<ReviewCardEntity>
 }

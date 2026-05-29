@@ -41,4 +41,7 @@ interface SubjectDao {
 
     @Query("SELECT COUNT(*) FROM subjects")
     suspend fun getCount(): Int
+
+    @Query("SELECT * FROM subjects")
+    suspend fun getAllList(): List<SubjectEntity>
 }
