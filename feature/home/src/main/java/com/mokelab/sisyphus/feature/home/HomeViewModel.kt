@@ -95,28 +95,54 @@ class HomeViewModel(
             readingRecordRepository.getAll()
         ) { studyRecords, pomodoroSessions, readingRecords ->
             val timeZone = TimeZone.currentSystemDefault()
-            val today = Clock.System.now().toLocalDateTime(timeZone).date
+            val now = Clock.System.now()
+            val localNow = now.toLocalDateTime(timeZone)
 
-            // Collect all dates with any activity
+            // 凌晨0-6点算前一天
+            val effectiveDate = if (localNow.hour < 6) {
+                localNow.date.minus(kotlinx.datetime.DatePeriod(days = 1))
+            } else {
+                localNow.date
+            }
+
+            // Collect all dates with any activity, applying the 00:00-06:00 rule
             val allDates = mutableSetOf<LocalDate>()
 
             // Study records dates
             studyRecords.forEach { record ->
-                allDates.add(record.startTime.toLocalDateTime(timeZone).date)
+                val recordLocal = record.startTime.toLocalDateTime(timeZone)
+                val recordDate = if (recordLocal.hour < 6) {
+                    recordLocal.date.minus(kotlinx.datetime.DatePeriod(days = 1))
+                } else {
+                    recordLocal.date
+                }
+                allDates.add(recordDate)
             }
 
             // Pomodoro sessions dates
             pomodoroSessions.forEach { session ->
-                allDates.add(session.startTime.toLocalDateTime(timeZone).date)
+                val sessionLocal = session.startTime.toLocalDateTime(timeZone)
+                val sessionDate = if (sessionLocal.hour < 6) {
+                    sessionLocal.date.minus(kotlinx.datetime.DatePeriod(days = 1))
+                } else {
+                    sessionLocal.date
+                }
+                allDates.add(sessionDate)
             }
 
             // Reading records dates
             readingRecords.forEach { record ->
-                allDates.add(record.createdAt.toLocalDateTime(timeZone).date)
+                val recordLocal = record.createdAt.toLocalDateTime(timeZone)
+                val recordDate = if (recordLocal.hour < 6) {
+                    recordLocal.date.minus(kotlinx.datetime.DatePeriod(days = 1))
+                } else {
+                    recordLocal.date
+                }
+                allDates.add(recordDate)
             }
 
-            // Calculate streak
-            calculateStreak(allDates.toList(), today)
+            // Calculate streak using effective date
+            calculateStreak(allDates.toList(), effectiveDate)
         }
         .catch { /* ignore */ }
         .collectLatest { streak ->
@@ -126,11 +152,24 @@ class HomeViewModel(
 
     private fun calculateTodayMinutes(records: List<StudyRecordEntity>): Int {
         val now = Clock.System.now()
-        val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val localNow = now.toLocalDateTime(TimeZone.currentSystemDefault())
+
+        // 凌晨0-6点算前一天
+        val effectiveDate = if (localNow.hour < 6) {
+            localNow.date.minus(kotlinx.datetime.DatePeriod(days = 1))
+        } else {
+            localNow.date
+        }
+
         return records
             .filter { record ->
-                val recordDate = record.startTime.toLocalDateTime(TimeZone.currentSystemDefault()).date
-                recordDate == today
+                val recordLocal = record.startTime.toLocalDateTime(TimeZone.currentSystemDefault())
+                val recordDate = if (recordLocal.hour < 6) {
+                    recordLocal.date.minus(kotlinx.datetime.DatePeriod(days = 1))
+                } else {
+                    recordLocal.date
+                }
+                recordDate == effectiveDate
             }
             .sumOf { it.durationMinutes }
     }
