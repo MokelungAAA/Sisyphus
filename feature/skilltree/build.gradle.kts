@@ -39,6 +39,8 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.navigation.compose)
     implementation(libs.koin.core)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.compose.material.icons)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }

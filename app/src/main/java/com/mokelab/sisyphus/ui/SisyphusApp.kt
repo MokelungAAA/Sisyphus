@@ -39,6 +39,7 @@ import com.mokelab.sisyphus.feature.review.ReviewCardViewModel
 import com.mokelab.sisyphus.feature.achievement.AchievementScreen
 import com.mokelab.sisyphus.feature.search.SearchScreen
 import com.mokelab.sisyphus.feature.settings.SettingsScreen
+import com.mokelab.sisyphus.feature.skilltree.SkillTreeScreen
 import com.mokelab.sisyphus.feature.sync.SyncLifecycleObserver
 import com.mokelab.sisyphus.feature.sync.SyncSettingsScreen
 import com.mokelab.sisyphus.feature.sync.SyncViewModel
@@ -120,7 +121,8 @@ fun SisyphusApp() {
             composable(Screen.Insights.route) {
                 StatsTabScreen(
                     onNavigateToExamStats = { navController.navigate(Screen.ExamStats.route) },
-                    onNavigateToLog = { navController.navigate("log") }
+                    onNavigateToLog = { navController.navigate("log") },
+                    onNavigateToSkillTree = { navController.navigate("skilltree") }
                 )
             }
             composable(Screen.Search.route) {
@@ -185,6 +187,9 @@ fun SisyphusApp() {
             }
             composable("achievement") {
                 AchievementScreen(navController = navController)
+            }
+            composable("skilltree") {
+                SkillTreeScreen(onBack = { navController.popBackStack() })
             }
         }
     }

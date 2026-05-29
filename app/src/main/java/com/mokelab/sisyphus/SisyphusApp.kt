@@ -16,6 +16,7 @@ import com.mokelab.sisyphus.feature.settings.SettingsModule
 import com.mokelab.sisyphus.feature.search.SearchModule
 import com.mokelab.sisyphus.feature.stats.statsModule
 import com.mokelab.sisyphus.feature.subject.SubjectModule
+import com.mokelab.sisyphus.feature.skilltree.SkillTreeModule
 import com.mokelab.sisyphus.feature.sync.syncModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -41,6 +42,7 @@ class SisyphusApp : Application() {
                 *SearchModule().modules().toTypedArray(),
                 *AchievementModule().modules().toTypedArray(),
                 *SettingsModule().modules().toTypedArray(),
+                *SkillTreeModule().modules().toTypedArray(),
                 nlpModule,
                 recommendationModule,
                 statsModule,

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -37,6 +38,7 @@ enum class StatsSubTab(val title: String) {
 fun StatsTabScreen(
     onNavigateToExamStats: () -> Unit = {},
     onNavigateToLog: () -> Unit = {},
+    onNavigateToSkillTree: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(StatsSubTab.OVERVIEW) }
@@ -76,7 +78,7 @@ fun StatsTabScreen(
                     ProgressStatsContent()
                 }
                 StatsSubTab.KNOWLEDGE -> {
-                    KnowledgeStatsContent()
+                    KnowledgeStatsContent(onNavigateToSkillTree = onNavigateToSkillTree)
                 }
                 StatsSubTab.READING -> {
                     ReadingStatsContent()
@@ -229,6 +231,7 @@ private fun SubjectProgressCard(subjectName: String, percentage: Float, minutes:
  */
 @Composable
 private fun KnowledgeStatsContent(
+    onNavigateToSkillTree: () -> Unit = {},
     viewModel: StudyStatsViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -327,6 +330,16 @@ private fun KnowledgeStatsContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        }
+
+        // 查看技能树按钮
+        item {
+            Button(
+                onClick = onNavigateToSkillTree,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("查看完整技能树")
             }
         }
     }

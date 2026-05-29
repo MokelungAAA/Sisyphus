@@ -14,8 +14,8 @@ android {
         applicationId = "com.mokelab.sisyphus"
         minSdk = 29
         targetSdk = 35
-        versionCode = 30
-        versionName = "0.30.0"
+        versionCode = 31
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
