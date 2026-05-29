@@ -5,4 +5,5 @@ import org.koin.dsl.module
 
 val statsModule = module {
     viewModel { ExamStatsViewModel(get(), get()) }
+    viewModel { StudyStatsViewModel(get(), get(), get()) }
 }

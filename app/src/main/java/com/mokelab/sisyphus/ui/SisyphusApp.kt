@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -43,20 +44,22 @@ import com.mokelab.sisyphus.feature.sync.SyncSettingsScreen
 import com.mokelab.sisyphus.feature.sync.SyncViewModel
 import com.mokelab.sisyphus.feature.subject.SubjectDetailScreen
 import com.mokelab.sisyphus.feature.subject.SubjectDetailViewModel
-import com.mokelab.sisyphus.feature.subject.SubjectScreen
+import com.mokelab.sisyphus.feature.stats.StatsTabScreen
+import com.mokelab.sisyphus.feature.stats.LogScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     data object Home : Screen("home", "首页", Icons.Default.Home)
-    data object Subject : Screen("subject", "学科", Icons.AutoMirrored.Filled.List)
+    data object Insights : Screen("insights", "洞察", Icons.Default.Favorite)
     data object Search : Screen("search", "搜索", Icons.Default.Search)
     data object Settings : Screen("settings", "设置", Icons.Default.Settings)
+    data object ExamStats : Screen("exam_stats", "考试统计", Icons.Default.Favorite)
 }
 
 val bottomNavItems = listOf(
     Screen.Home,
-    Screen.Subject,
+    Screen.Insights,
     Screen.Search,
     Screen.Settings,
 )
@@ -114,11 +117,10 @@ fun SisyphusApp() {
                     }
                 )
             }
-            composable(Screen.Subject.route) {
-                SubjectScreen(
-                    onSubjectClick = { subjectId ->
-                        navController.navigate("subject/$subjectId")
-                    }
+            composable(Screen.Insights.route) {
+                StatsTabScreen(
+                    onNavigateToExamStats = { navController.navigate(Screen.ExamStats.route) },
+                    onNavigateToLog = { navController.navigate("log") }
                 )
             }
             composable(Screen.Search.route) {
@@ -160,10 +162,17 @@ fun SisyphusApp() {
                     onNavigateToStats = { navController.navigate("exam_stats") }
                 )
             }
-            composable("exam_stats") {
+            composable(Screen.ExamStats.route) {
                 val viewModel: ExamStatsViewModel = koinViewModel()
                 ExamStatsScreen(
                     viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("log") {
+                // TODO: Get records from ViewModel
+                LogScreen(
+                    records = emptyList(),
                     onBack = { navController.popBackStack() }
                 )
             }
