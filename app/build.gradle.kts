@@ -76,6 +76,7 @@ dependencies {
     implementation(project(":feature:achievement"))
     implementation(project(":feature:stats"))
     implementation(project(":feature:skilltree"))
+    implementation(project(":feature:nlp"))
 
     // Kotlin
     implementation(libs.kotlin.stdlib)
