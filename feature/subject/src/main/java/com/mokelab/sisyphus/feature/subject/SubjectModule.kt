@@ -12,6 +12,7 @@ class SubjectModule : KoinModules {
             viewModel { ChapterViewModel(get()) }
             viewModel { SectionViewModel(get()) }
             viewModel { KnowledgePointViewModel(get()) }
+            viewModel { SubjectDetailViewModel(get(), get(), get(), get(), get(), get(), get()) }
         }
     )
 }

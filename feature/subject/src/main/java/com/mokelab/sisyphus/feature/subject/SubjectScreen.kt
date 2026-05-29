@@ -5,7 +5,11 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SubjectScreen(
-    viewModel: SubjectViewModel = koinViewModel()
+    viewModel: SubjectViewModel = koinViewModel(),
+    onSubjectClick: (Long) -> Unit = {}
 ) {
-    SubjectListScreen(viewModel = viewModel)
+    SubjectListScreen(
+        viewModel = viewModel,
+        onSubjectClick = onSubjectClick
+    )
 }

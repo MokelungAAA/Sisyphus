@@ -33,6 +33,8 @@ import com.mokelab.sisyphus.feature.review.ReviewCardListScreen
 import com.mokelab.sisyphus.feature.review.ReviewCardViewModel
 import com.mokelab.sisyphus.feature.search.SearchScreen
 import com.mokelab.sisyphus.feature.settings.SettingsScreen
+import com.mokelab.sisyphus.feature.subject.SubjectDetailScreen
+import com.mokelab.sisyphus.feature.subject.SubjectDetailViewModel
 import com.mokelab.sisyphus.feature.subject.SubjectScreen
 import org.koin.androidx.compose.koinViewModel
 
@@ -95,7 +97,11 @@ fun SisyphusApp() {
                 )
             }
             composable(Screen.Subject.route) {
-                SubjectScreen()
+                SubjectScreen(
+                    onSubjectClick = { subjectId ->
+                        navController.navigate("subject/$subjectId")
+                    }
+                )
             }
             composable(Screen.Search.route) {
                 SearchScreen()
@@ -108,8 +114,11 @@ fun SisyphusApp() {
                 PomodoroScreen(viewModel = viewModel)
             }
             composable("subject/{subjectId}") { backStackEntry ->
-                val subjectId = backStackEntry.arguments?.getString("subjectId")?.toLongOrNull() ?: 0L
-                SubjectScreen()
+                val viewModel: SubjectDetailViewModel = koinViewModel()
+                SubjectDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable("review") {
                 val viewModel: ReviewCardViewModel = koinViewModel()
