@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.mokelab.sisyphus.core.preferences.PomodoroPreferences
 import com.mokelab.sisyphus.core.preferences.ThemePreferences
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -26,13 +27,14 @@ fun SettingsScreen(
     onNavigateToAchievement: () -> Unit,
     onNavigateToAbout: () -> Unit,
     viewModel: DataExportImportViewModel = koinViewModel(),
-    themePreferences: ThemePreferences = koinInject()
+    themePreferences: ThemePreferences = koinInject(),
+    pomodoroPreferences: PomodoroPreferences = koinInject()
 ) {
     var darkMode by remember { mutableStateOf(themePreferences.isDarkMode()) }
     var notificationsEnabled by remember { mutableStateOf(true) }
     var showPomodoroSettings by remember { mutableStateOf(false) }
-    var workDuration by remember { mutableIntStateOf(25) }
-    var breakDuration by remember { mutableIntStateOf(5) }
+    var workDuration by remember { mutableIntStateOf(pomodoroPreferences.getWorkDuration()) }
+    var breakDuration by remember { mutableIntStateOf(pomodoroPreferences.getBreakDuration()) }
 
     val isExporting by viewModel.isExporting.collectAsState()
     val isImporting by viewModel.isImporting.collectAsState()
@@ -202,8 +204,14 @@ fun SettingsScreen(
         PomodoroSettingsDialog(
             workDuration = workDuration,
             breakDuration = breakDuration,
-            onWorkDurationChange = { workDuration = it },
-            onBreakDurationChange = { breakDuration = it },
+            onWorkDurationChange = {
+                workDuration = it
+                pomodoroPreferences.setWorkDuration(it)
+            },
+            onBreakDurationChange = {
+                breakDuration = it
+                pomodoroPreferences.setBreakDuration(it)
+            },
             onDismiss = { showPomodoroSettings = false }
         )
     }
