@@ -12,12 +12,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mokelab.sisyphus.core.database.entity.StudyRecordEntity
+import com.mokelab.sisyphus.core.database.entity.SubjectEntity
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import org.koin.androidx.compose.koinViewModel
 
 /**
  * 日志视图模式
@@ -33,18 +35,17 @@ enum class LogViewMode(val title: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogScreen(
-    records: List<StudyRecordEntity>,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: LogViewModel = koinViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
     var viewMode by remember { mutableStateOf(LogViewMode.DATE) }
     var showFilterMenu by remember { mutableStateOf(false) }
     var selectedSubjectId by remember { mutableStateOf<Long?>(null) }
 
-    // 获取所有学科
-    val subjects = records.map { it.subjectId }.distinct()
-
-    // 根据视图模式分组
+    val records = uiState.records
+    val subjects = uiState.subjects
     val timeZone = TimeZone.currentSystemDefault()
 
     Scaffold(
@@ -60,7 +61,6 @@ fun LogScreen(
                     }
                 },
                 actions = {
-                    // 视图模式切换
                     TextButton(onClick = {
                         viewMode = when (viewMode) {
                             LogViewMode.DATE -> LogViewMode.SUBJECT
@@ -70,7 +70,6 @@ fun LogScreen(
                         Text(viewMode.title)
                     }
 
-                    // 筛选按钮
                     IconButton(onClick = { showFilterMenu = true }) {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -78,7 +77,6 @@ fun LogScreen(
                         )
                     }
 
-                    // 筛选菜单
                     DropdownMenu(
                         expanded = showFilterMenu,
                         onDismissRequest = { showFilterMenu = false }
@@ -90,11 +88,11 @@ fun LogScreen(
                                 showFilterMenu = false
                             }
                         )
-                        subjects.forEach { subjectId ->
+                        subjects.values.forEach { subject ->
                             DropdownMenuItem(
-                                text = { Text("学科 $subjectId") },
+                                text = { Text(subject.name) },
                                 onClick = {
-                                    selectedSubjectId = subjectId
+                                    selectedSubjectId = subject.id
                                     showFilterMenu = false
                                 }
                             )
@@ -104,12 +102,16 @@ fun LogScreen(
             )
         }
     ) { padding ->
-        if (records.isEmpty()) {
-            // 空状态
+        if (uiState.isLoading) {
             Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (records.isEmpty()) {
+            Box(
+                modifier = modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -120,9 +122,7 @@ fun LogScreen(
             }
         } else {
             LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -143,7 +143,10 @@ fun LogScreen(
                                 )
                             }
                             items(dayRecords) { record ->
-                                LogRecordItem(record = record)
+                                LogRecordItem(
+                                    record = record,
+                                    subjectName = subjects[record.subjectId]?.name ?: "未知"
+                                )
                             }
                         }
                     }
@@ -154,13 +157,16 @@ fun LogScreen(
                         subjectGrouped.forEach { (subjectId, subjectRecords) ->
                             item {
                                 Text(
-                                    text = "学科 $subjectId",
+                                    text = subjects[subjectId]?.name ?: "未知学科",
                                     style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 )
                             }
                             items(subjectRecords) { record ->
-                                LogRecordItem(record = record)
+                                LogRecordItem(
+                                    record = record,
+                                    subjectName = subjects[record.subjectId]?.name ?: "未知"
+                                )
                             }
                         }
                     }
@@ -170,27 +176,21 @@ fun LogScreen(
     }
 }
 
-/**
- * 单条记录项
- */
 @Composable
 private fun LogRecordItem(
     record: StudyRecordEntity,
+    subjectName: String,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "学科 ${record.subjectId}",
+                    text = subjectName,
                     style = MaterialTheme.typography.titleSmall
                 )
                 Text(
@@ -199,7 +199,6 @@ private fun LogRecordItem(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-
             record.note?.let { note ->
                 if (note.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
@@ -214,9 +213,6 @@ private fun LogRecordItem(
     }
 }
 
-/**
- * 格式化日期
- */
 private fun formatDate(date: LocalDate): String {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val yesterday = today.minus(1, DateTimeUnit.DAY)

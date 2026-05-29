@@ -170,9 +170,7 @@ fun SisyphusApp() {
                 )
             }
             composable("log") {
-                // TODO: Get records from ViewModel
                 LogScreen(
-                    records = emptyList(),
                     onBack = { navController.popBackStack() }
                 )
             }
