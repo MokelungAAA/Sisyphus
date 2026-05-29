@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.entity.ReadingRecordEntity
 import com.mokelab.sisyphus.core.database.entity.ReadingType
 import com.mokelab.sisyphus.core.database.repository.ReadingRecordRepository
+import com.mokelab.sisyphus.feature.achievement.AchievementChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,8 @@ data class ReadingRecordUiState(
 )
 
 class ReadingRecordViewModel(
-    private val repository: ReadingRecordRepository
+    private val repository: ReadingRecordRepository,
+    private val achievementChecker: AchievementChecker
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReadingRecordUiState())
@@ -60,6 +62,7 @@ class ReadingRecordViewModel(
                     createdAt = now
                 )
             )
+            achievementChecker.onReadingRecordCreated()
         }
     }
 

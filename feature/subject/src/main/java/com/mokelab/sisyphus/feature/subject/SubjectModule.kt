@@ -7,7 +7,7 @@ import org.koin.dsl.module
 class SubjectModule : KoinModules {
     override fun modules() = listOf(
         module {
-            viewModel { SubjectViewModel(get()) }
+            viewModel { SubjectViewModel(get(), get()) }
             viewModel { TextbookViewModel(get()) }
             viewModel { ChapterViewModel(get()) }
             viewModel { SectionViewModel(get()) }

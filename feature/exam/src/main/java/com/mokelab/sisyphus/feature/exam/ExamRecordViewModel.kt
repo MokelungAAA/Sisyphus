@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.entity.ExamRecordEntity
 import com.mokelab.sisyphus.core.database.entity.ExamType
 import com.mokelab.sisyphus.core.database.repository.ExamRecordRepository
+import com.mokelab.sisyphus.feature.achievement.AchievementChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,8 @@ data class ExamRecordUiState(
 )
 
 class ExamRecordViewModel(
-    private val repository: ExamRecordRepository
+    private val repository: ExamRecordRepository,
+    private val achievementChecker: AchievementChecker
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExamRecordUiState())
@@ -57,19 +59,19 @@ class ExamRecordViewModel(
     ) {
         viewModelScope.launch {
             val now = Clock.System.now()
-            repository.insert(
-                ExamRecordEntity(
-                    subjectId = subjectId,
-                    examName = examName,
-                    examType = examType,
-                    score = score,
-                    totalScore = totalScore,
-                    scoreRate = score / totalScore,
-                    isFullMock = isFullMock,
-                    examDate = now,
-                    createdAt = now
-                )
+            val entity = ExamRecordEntity(
+                subjectId = subjectId,
+                examName = examName,
+                examType = examType,
+                score = score,
+                totalScore = totalScore,
+                scoreRate = score / totalScore,
+                isFullMock = isFullMock,
+                examDate = now,
+                createdAt = now
             )
+            repository.insert(entity)
+            achievementChecker.onExamRecordCreated(entity)
         }
     }
 

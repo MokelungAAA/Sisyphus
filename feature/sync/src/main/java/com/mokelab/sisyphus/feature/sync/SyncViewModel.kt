@@ -2,6 +2,7 @@ package com.mokelab.sisyphus.feature.sync
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mokelab.sisyphus.feature.achievement.AchievementChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +26,8 @@ class SyncViewModel(
     private val authManager: AuthManager,
     private val syncService: SyncService,
     private val tokenStorage: TokenStorage,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val achievementChecker: AchievementChecker
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SyncUiState())
@@ -144,6 +146,8 @@ class SyncViewModel(
                     downloaded = result.downloaded,
                     conflicts = result.conflicts
                 )
+                // 成就检查
+                achievementChecker.onSyncCompleted()
             } else {
                 _uiState.value = _uiState.value.copy(
                     isSyncing = false,

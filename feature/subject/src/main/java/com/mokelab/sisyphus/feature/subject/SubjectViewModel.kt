@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.entity.SubjectEntity
 import com.mokelab.sisyphus.core.database.repository.SubjectRepository
+import com.mokelab.sisyphus.feature.achievement.AchievementChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,8 @@ data class SubjectUiState(
 )
 
 class SubjectViewModel(
-    private val repository: SubjectRepository
+    private val repository: SubjectRepository,
+    private val achievementChecker: AchievementChecker
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SubjectUiState())
@@ -53,6 +55,7 @@ class SubjectViewModel(
                     updatedAt = now
                 )
             )
+            achievementChecker.onSubjectCreated()
         }
     }
 

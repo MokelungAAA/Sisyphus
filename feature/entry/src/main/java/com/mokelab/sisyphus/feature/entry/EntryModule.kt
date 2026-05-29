@@ -7,7 +7,7 @@ import org.koin.dsl.module
 class EntryModule : KoinModules {
     override fun modules() = listOf(
         module {
-            viewModel { StudyRecordViewModel(get()) }
+            viewModel { StudyRecordViewModel(get(), get()) }
         }
     )
 }

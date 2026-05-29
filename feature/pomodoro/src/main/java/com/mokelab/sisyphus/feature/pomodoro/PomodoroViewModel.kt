@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.entity.PomodoroSessionEntity
 import com.mokelab.sisyphus.core.database.entity.PresetType
 import com.mokelab.sisyphus.core.database.repository.PomodoroSessionRepository
+import com.mokelab.sisyphus.feature.achievement.AchievementChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,7 +37,8 @@ data class PomodoroUiState(
 
 class PomodoroViewModel(
     private val repository: PomodoroSessionRepository,
-    private val context: Context
+    private val context: Context,
+    private val achievementChecker: AchievementChecker
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PomodoroUiState())
@@ -156,6 +158,9 @@ class PomodoroViewModel(
                     createdAt = now
                 )
             )
+
+            // 成就检查
+            achievementChecker.onPomodoroCompleted()
 
             // Show completion animation
             _uiState.update { it.copy(showCompletionAnimation = true) }

@@ -8,7 +8,7 @@ import org.koin.dsl.module
 class PomodoroModule : KoinModules {
     override fun modules() = listOf(
         module {
-            viewModel { PomodoroViewModel(get(), androidContext()) }
+            viewModel { PomodoroViewModel(get(), androidContext(), get()) }
         }
     )
 }

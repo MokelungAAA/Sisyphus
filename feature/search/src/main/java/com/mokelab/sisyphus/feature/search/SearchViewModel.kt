@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.dao.*
 import com.mokelab.sisyphus.core.database.entity.*
+import com.mokelab.sisyphus.feature.achievement.AchievementChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -73,6 +74,7 @@ class SearchViewModel(
     private val knowledgePointDao: KnowledgePointDao,
     private val examRecordDao: ExamRecordDao,
     private val readingRecordDao: ReadingRecordDao,
+    private val achievementChecker: AchievementChecker,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -273,6 +275,10 @@ class SearchViewModel(
                     isLoading = false,
                     resultGroups = groups
                 )
+                // 成就检查
+                if (groups.isNotEmpty()) {
+                    achievementChecker.onSearchPerformed()
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

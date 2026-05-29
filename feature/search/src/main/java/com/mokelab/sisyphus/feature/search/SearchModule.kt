@@ -17,7 +17,8 @@ class SearchModule : KoinModules {
                     sectionDao = get(),
                     knowledgePointDao = get(),
                     examRecordDao = get(),
-                    readingRecordDao = get()
+                    readingRecordDao = get(),
+                    achievementChecker = get()
                 )
             }
         }

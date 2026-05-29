@@ -11,5 +11,5 @@ val syncModule = module {
     single { ConflictResolver() }
     single { SyncManager(androidContext(), get(), get(), get(), get()) }
     single { SyncLifecycleObserver(get(), get()) }
-    viewModel { SyncViewModel(get(), get(), get(), get()) }
+    viewModel { SyncViewModel(get(), get(), get(), get(), get()) }
 }
