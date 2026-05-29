@@ -73,7 +73,7 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun SisyphusTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // 默认关闭动态颜色，使用自定义主题
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
