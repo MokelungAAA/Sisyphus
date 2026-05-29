@@ -1,0 +1,55 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Signing
+release.jks
+release.jks.password
+
+# Gradle
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Kotlin
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# Android
+*.apk
+*.aab
+*.dex
+*.class
+
+# Log
+*.log
+
+# Google Services
+google-services.json
+
+# Gradle distribution
+gradle-*.zip
+gradle-*.zip.part
+gradle/wrapper/gradle-*.zip
+gradle/wrapper/gradle-*.zip.part

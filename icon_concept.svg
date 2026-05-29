@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="256" cy="256" r="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f0f9ff"/>
+    </radialGradient>
+
+    <!-- 曲线A左半：左端实(0.85) → 中心消失(0.05) -->
+    <linearGradient id="aLeft" x1="88" y1="0" x2="256" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#bae6fd" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <!-- 曲线A右半：中心消失(0.05) → 右端恢复(0.5) -->
+    <linearGradient id="aRight" x1="256" y1="0" x2="424" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#bae6fd" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0.5"/>
+    </linearGradient>
+
+    <!-- 曲线B左半：左端淡(0.4) → 中心最亮(1.0) -->
+    <linearGradient id="bLeft" x1="88" y1="0" x2="256" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="1"/>
+    </linearGradient>
+
+    <!-- 曲线B右半：中心最亮(1.0) → 右端淡(0.6) -->
+    <linearGradient id="bRight" x1="256" y1="0" x2="424" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="108" ry="108" fill="url(#bg)"/>
+
+  <!-- 曲线A左半 -->
+  <path d="M 88 280 C 88 180, 175 140, 256 256"
+    fill="none" stroke="url(#aLeft)" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- 曲线A右半 -->
+  <path d="M 256 256 C 337 372, 424 332, 424 232"
+    fill="none" stroke="url(#aRight)" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- 曲线B左半 -->
+  <path d="M 88 232 C 88 332, 175 372, 256 256"
+    fill="none" stroke="url(#bLeft)" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- 曲线B右半 -->
+  <path d="M 256 256 C 337 140, 424 180, 424 280"
+    fill="none" stroke="url(#bRight)" stroke-width="26" stroke-linecap="round"/>
+</svg>

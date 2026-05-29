@@ -1,0 +1,17 @@
+package com.mokelab.sisyphus.core.di
+
+import com.mokelab.sisyphus.core.database.repository.*
+import org.koin.dsl.module
+
+val repositoryModule = module {
+    single<SubjectRepository> { SubjectRepositoryImpl(get()) }
+    single<TextbookRepository> { TextbookRepositoryImpl(get()) }
+    single<ChapterRepository> { ChapterRepositoryImpl(get()) }
+    single<SectionRepository> { SectionRepositoryImpl(get()) }
+    single<KnowledgePointRepository> { KnowledgePointRepositoryImpl(get()) }
+    single<StudyRecordRepository> { StudyRecordRepositoryImpl(get()) }
+    single<ReviewCardRepository> { ReviewCardRepositoryImpl(get()) }
+    single<PomodoroSessionRepository> { PomodoroSessionRepositoryImpl(get()) }
+    single<ExamRecordRepository> { ExamRecordRepositoryImpl(get()) }
+    single<ReadingRecordRepository> { ReadingRecordRepositoryImpl(get()) }
+}
