@@ -7,7 +7,7 @@ import org.koin.dsl.module
 class HomeModule : KoinModules {
     override fun modules() = listOf(
         module {
-            viewModel { HomeViewModel(get(), get(), get()) }
+            viewModel { HomeViewModel(get(), get(), get(), get()) }
         }
     )
 }

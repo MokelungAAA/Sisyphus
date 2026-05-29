@@ -2,8 +2,11 @@ package com.mokelab.sisyphus.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mokelab.sisyphus.core.database.entity.PomodoroSessionEntity
+import com.mokelab.sisyphus.core.database.entity.ReadingRecordEntity
 import com.mokelab.sisyphus.core.database.entity.StudyRecordEntity
 import com.mokelab.sisyphus.core.database.entity.SubjectEntity
+import com.mokelab.sisyphus.core.database.repository.PomodoroSessionRepository
 import com.mokelab.sisyphus.core.database.repository.ReadingRecordRepository
 import com.mokelab.sisyphus.core.database.repository.StudyRecordRepository
 import com.mokelab.sisyphus.core.database.repository.SubjectRepository
@@ -12,8 +15,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -25,12 +30,14 @@ data class HomeUiState(
     val streakDays: Int = 0,
     val subjects: List<SubjectEntity> = emptyList(),
     val isSyncing: Boolean = false,
+    val isLoading: Boolean = true,
     val error: String? = null
 )
 
 class HomeViewModel(
     private val subjectRepository: SubjectRepository,
     private val studyRecordRepository: StudyRecordRepository,
+    private val pomodoroSessionRepository: PomodoroSessionRepository,
     private val readingRecordRepository: ReadingRecordRepository
 ) : ViewModel() {
 
@@ -38,38 +45,82 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadSubjects()
-        calculateXP()
+        loadHomeData()
     }
 
-    private fun loadSubjects() {
+    private fun loadHomeData() {
         viewModelScope.launch {
-            subjectRepository.getAll()
-                .catch { e -> _uiState.value = _uiState.value.copy(error = e.message) }
-                .collectLatest { subjects ->
-                    _uiState.value = _uiState.value.copy(subjects = subjects)
-                }
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+
+            // Load subjects
+            launch {
+                subjectRepository.getAll()
+                    .catch { e -> _uiState.value = _uiState.value.copy(error = e.message) }
+                    .collectLatest { subjects ->
+                        _uiState.value = _uiState.value.copy(subjects = subjects)
+                    }
+            }
+
+            // Load study records and calculate XP
+            launch {
+                studyRecordRepository.getAll()
+                    .catch { /* ignore */ }
+                    .collectLatest { records ->
+                        val totalMinutes = records.sumOf { it.durationMinutes }
+                        val todayMinutes = calculateTodayMinutes(records)
+                        val level = calculateLevel(totalMinutes)
+                        val title = getTitleForLevel(level)
+                        _uiState.value = _uiState.value.copy(
+                            totalXP = totalMinutes,
+                            todayXP = todayMinutes,
+                            level = level,
+                            title = title
+                        )
+                    }
+            }
+
+            // Calculate streak from all data sources
+            launch {
+                calculateStreakFromAllSources()
+            }
+
+            _uiState.value = _uiState.value.copy(isLoading = false)
         }
     }
 
-    private fun calculateXP() {
-        viewModelScope.launch {
-            studyRecordRepository.getAll()
-                .catch { /* ignore */ }
-                .collectLatest { records ->
-                    val totalMinutes = records.sumOf { it.durationMinutes }
-                    val todayMinutes = calculateTodayMinutes(records)
-                    val level = calculateLevel(totalMinutes)
-                    val title = getTitleForLevel(level)
-                    val streak = calculateStreak(records)
-                    _uiState.value = _uiState.value.copy(
-                        totalXP = totalMinutes,
-                        todayXP = todayMinutes,
-                        level = level,
-                        title = title,
-                        streakDays = streak
-                    )
-                }
+    private suspend fun calculateStreakFromAllSources() {
+        combine(
+            studyRecordRepository.getAll(),
+            pomodoroSessionRepository.getAll(),
+            readingRecordRepository.getAll()
+        ) { studyRecords, pomodoroSessions, readingRecords ->
+            val timeZone = TimeZone.currentSystemDefault()
+            val today = Clock.System.now().toLocalDateTime(timeZone).date
+
+            // Collect all dates with any activity
+            val allDates = mutableSetOf<LocalDate>()
+
+            // Study records dates
+            studyRecords.forEach { record ->
+                allDates.add(record.startTime.toLocalDateTime(timeZone).date)
+            }
+
+            // Pomodoro sessions dates
+            pomodoroSessions.forEach { session ->
+                allDates.add(session.startTime.toLocalDateTime(timeZone).date)
+            }
+
+            // Reading records dates
+            readingRecords.forEach { record ->
+                allDates.add(record.createdAt.toLocalDateTime(timeZone).date)
+            }
+
+            // Calculate streak
+            calculateStreak(allDates.toList(), today)
+        }
+        .catch { /* ignore */ }
+        .collectLatest { streak ->
+            _uiState.value = _uiState.value.copy(streakDays = streak)
         }
     }
 
@@ -114,28 +165,29 @@ class HomeViewModel(
         }
     }
 
-    private fun calculateStreak(records: List<StudyRecordEntity>): Int {
-        if (records.isEmpty()) return 0
+    /**
+     * Calculate streak from all data sources.
+     * Rules:
+     * - Any data counts as valid (study records, pomodoro sessions, reading records)
+     * - Missing a day resets streak to 0
+     * - 00:00-06:00 counts as previous day
+     */
+    private fun calculateStreak(dates: List<LocalDate>, today: LocalDate): Int {
+        if (dates.isEmpty()) return 0
 
-        val timeZone = TimeZone.currentSystemDefault()
-        val today = Clock.System.now().toLocalDateTime(timeZone).date
+        // Get unique dates, sorted descending
+        val uniqueDates = dates.distinct().sortedDescending()
 
-        // Get unique dates with records, sorted descending
-        val recordDates = records
-            .map { it.startTime.toLocalDateTime(timeZone).date }
-            .distinct()
-            .sortedDescending()
-
-        if (recordDates.isEmpty()) return 0
+        if (uniqueDates.isEmpty()) return 0
 
         // Check if the most recent record is today or yesterday
-        val daysSinceLatest = today.toEpochDays() - recordDates[0].toEpochDays()
+        val daysSinceLatest = today.toEpochDays() - uniqueDates[0].toEpochDays()
         if (daysSinceLatest > 1) return 0
 
         // Count consecutive days
         var streak = 1
-        for (i in 1 until recordDates.size) {
-            val diff = recordDates[i - 1].toEpochDays() - recordDates[i].toEpochDays()
+        for (i in 1 until uniqueDates.size) {
+            val diff = uniqueDates[i - 1].toEpochDays() - uniqueDates[i].toEpochDays()
             if (diff == 1) {
                 streak++
             } else {

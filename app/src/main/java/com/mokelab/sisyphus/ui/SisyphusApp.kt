@@ -29,7 +29,6 @@ import com.mokelab.sisyphus.feature.exam.ExamRecordViewModel
 import com.mokelab.sisyphus.feature.home.HomeScreen
 import com.mokelab.sisyphus.feature.stats.ExamStatsScreen
 import com.mokelab.sisyphus.feature.stats.ExamStatsViewModel
-import com.mokelab.sisyphus.feature.home.HomeViewModel
 import com.mokelab.sisyphus.feature.pomodoro.PomodoroScreen
 import com.mokelab.sisyphus.feature.pomodoro.PomodoroViewModel
 import com.mokelab.sisyphus.feature.reading.ReadingRecordListScreen
@@ -108,11 +107,9 @@ fun SisyphusApp() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
-                val viewModel: HomeViewModel = koinViewModel()
                 HomeScreen(
-                    viewModel = viewModel,
                     onNavigateToPomodoro = { navController.navigate("pomodoro") },
-                    onSubjectClick = { subjectId ->
+                    onNavigateToSubject = { subjectId ->
                         navController.navigate("subject/$subjectId")
                     }
                 )
