@@ -3,7 +3,6 @@ package com.mokelab.sisyphus.feature.recommendation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.entity.ReviewCardEntity
-import com.mokelab.sisyphus.core.database.entity.StudyRecordEntity
 import com.mokelab.sisyphus.core.database.repository.KnowledgePointRepository
 import com.mokelab.sisyphus.core.database.repository.ReviewCardRepository
 import com.mokelab.sisyphus.core.database.repository.StudyRecordRepository
@@ -73,18 +72,19 @@ class RecommendationViewModel(
 
                     if (subjectId != null) {
                         RecommendationItem(
-                            itemId = "fsrs_${card.id}",
+                            id = "fsrs_${card.id}",
+                            type = RecommendationType.FSRS_REVIEW,
                             subjectId = subjectId,
                             subjectName = subjectMap[subjectId]?.name ?: "未知学科",
-                            knowledgePointId = card.knowledgePointId,
-                            knowledgePointName = knowledgePoint?.name ?: "未知知识点",
-                            type = RecommendationType.FSRS_REVIEW,
                             title = "复习：${knowledgePoint?.name ?: "未知知识点"}",
                             description = "FSRS间隔重复复习",
                             estimatedMinutes = 5,
-                            priority = RecommendationPriority.HIGH,
                             urgencyScore = calculateUrgency(card),
-                            inputOutputRatio = ActivityCategory.OUTPUT
+                            priorityScore = calculateUrgency(card),
+                            category = ActivityCategory.OUTPUT,
+                            metadata = mapOf(
+                                "knowledgePointId" to card.knowledgePointId.toString()
+                            )
                         )
                     } else {
                         null
@@ -96,12 +96,8 @@ class RecommendationViewModel(
                 val recentActivities = todayRecords.map { record ->
                     ActivityRecord(
                         subjectId = record.subjectId,
-                        category = if (record.inputType == com.mokelab.sisyphus.core.database.entity.InputOutputType.INPUT) {
-                            ActivityCategory.INPUT
-                        } else {
-                            ActivityCategory.OUTPUT
-                        },
-                        minutes = record.durationMinutes
+                        minutes = record.durationMinutes,
+                        timestamp = record.createdAt.toEpochMilliseconds()
                     )
                 }
 

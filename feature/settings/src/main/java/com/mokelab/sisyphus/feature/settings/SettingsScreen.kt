@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -56,11 +57,18 @@ fun SettingsScreen(
         }
     }
 
-    // 导出 launcher
-    val exportLauncher = rememberLauncherForActivityResult(
+    // JSON 导出 launcher
+    val exportJsonLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri: Uri? ->
         uri?.let { viewModel.exportToJson(it) }
+    }
+
+    // CSV 导出 launcher
+    val exportCsvLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri: Uri? ->
+        uri?.let { viewModel.exportToCsv(it) }
     }
 
     // 导入 launcher
@@ -105,11 +113,19 @@ fun SettingsScreen(
             // 数据设置
             SettingsSection(title = "数据") {
                 SettingsClickableItem(
-                    title = "导出数据",
-                    description = "导出所有数据为JSON文件",
+                    title = "导出JSON",
+                    description = "导出所有数据为JSON文件（完整备份）",
                     icon = Icons.Filled.Share,
                     onClick = {
-                        exportLauncher.launch("sisyphus_backup.json")
+                        exportJsonLauncher.launch("sisyphus_backup.json")
+                    }
+                )
+                SettingsClickableItem(
+                    title = "导出CSV",
+                    description = "导出数据为CSV文件（可用Excel查看）",
+                    icon = Icons.Filled.Share,
+                    onClick = {
+                        exportCsvLauncher.launch("sisyphus_data.csv")
                     }
                 )
                 if (isExporting) {

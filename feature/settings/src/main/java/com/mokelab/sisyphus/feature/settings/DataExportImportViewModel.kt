@@ -7,8 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.SisyphusDatabase
 import com.mokelab.sisyphus.core.database.entity.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -51,6 +54,12 @@ class DataExportImportViewModel(
 
     private val _uiState = MutableStateFlow(ExportImportUiState())
     val uiState: StateFlow<ExportImportUiState> = _uiState.asStateFlow()
+
+    // 为 SettingsScreen 提供直接的 StateFlow 属性
+    val isExporting: StateFlow<Boolean> = _uiState.map { it.isExporting }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val isImporting: StateFlow<Boolean> = _uiState.map { it.isImporting }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val message: StateFlow<String?> = _uiState.map { it.message }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val errorMessage: StateFlow<String?> = _uiState.map { it.error }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val json = Json {
         prettyPrint = true
@@ -106,8 +115,99 @@ class DataExportImportViewModel(
         }
     }
 
+    fun exportToCsv(uri: Uri) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isExporting = true, error = null, message = null)
+            try {
+                val exportData = gatherExportData()
+                val csvString = buildCsvString(exportData)
+
+                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    outputStream.write(csvString.toByteArray(Charsets.UTF_8))
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    isExporting = false,
+                    message = "CSV导出成功！数据已保存到所选位置"
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isExporting = false,
+                    error = "CSV导出失败: ${e.message}"
+                )
+            }
+        }
+    }
+
+    private fun buildCsvString(data: ExportData): String {
+        val sb = StringBuilder()
+        // BOM for Excel UTF-8 compatibility
+        sb.append("﻿")
+
+        // 学科表
+        sb.appendLine("=== 学科 ===")
+        sb.appendLine("ID,名称,权重,选修,考试分数比例")
+        data.subjects.forEach {
+            sb.appendLine("${it.id},${escapeCsv(it.name)},${it.weight},${it.isElective},${it.examScoreRatio}")
+        }
+        sb.appendLine()
+
+        // 学习记录表
+        sb.appendLine("=== 学习记录 ===")
+        sb.appendLine("ID,学科ID,学习类型,时长(分钟),输入类型,XP,备注")
+        data.studyRecords.forEach {
+            sb.appendLine("${it.id},${it.subjectId},${it.studyType},${it.durationMinutes},${it.inputType},${it.xpEarned},${escapeCsv(it.note ?: "")}")
+        }
+        sb.appendLine()
+
+        // 番茄钟记录
+        sb.appendLine("=== 番茄钟记录 ===")
+        sb.appendLine("ID,学科ID,时长(分钟),实际时长(分钟),是否完成,预设类型")
+        data.pomodoroSessions.forEach {
+            sb.appendLine("${it.id},${it.subjectId},${it.durationMinutes},${it.actualMinutes},${it.isCompleted},${it.presetType}")
+        }
+        sb.appendLine()
+
+        // 复习卡片
+        sb.appendLine("=== 复习卡片 ===")
+        sb.appendLine("ID,知识点ID,稳定性,难度,状态,到期日")
+        data.reviewCards.forEach {
+            sb.appendLine("${it.id},${it.knowledgePointId},${it.stability},${it.difficulty},${it.state},${it.due}")
+        }
+        sb.appendLine()
+
+        // 阅读记录
+        sb.appendLine("=== 阅读记录 ===")
+        sb.appendLine("ID,书名,作者,阅读类型,时长(分钟),备注")
+        data.readingRecords.forEach {
+            sb.appendLine("${it.id},${escapeCsv(it.bookName)},${escapeCsv(it.author ?: "")},${it.readingType},${it.durationMinutes},${escapeCsv(it.note ?: "")}")
+        }
+        sb.appendLine()
+
+        // 考试记录
+        sb.appendLine("=== 考试记录 ===")
+        sb.appendLine("ID,学科ID,考试名称,考试类型,分数,总分,得分率,是否全真模拟")
+        data.examRecords.forEach {
+            sb.appendLine("${it.id},${it.subjectId},${escapeCsv(it.examName)},${it.examType},${it.score},${it.totalScore},${it.scoreRate},${it.isFullMock}")
+        }
+
+        return sb.toString()
+    }
+
+    private fun escapeCsv(field: String): String {
+        return if (field.contains(",") || field.contains("\"") || field.contains("\n")) {
+            "\"${field.replace("\"", "\"\"")}\""
+        } else {
+            field
+        }
+    }
+
     fun clearMessage() {
         _uiState.value = _uiState.value.copy(message = null, error = null)
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
     }
 
     private suspend fun gatherExportData(): ExportData {
