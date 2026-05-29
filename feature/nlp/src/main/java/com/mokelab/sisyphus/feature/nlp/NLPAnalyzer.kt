@@ -86,6 +86,16 @@ class NLPAnalyzer {
             )
         }
 
+        // 4b. 提取考试类型
+        NLPRegexPatterns.matchExamType(text)?.let { examType ->
+            entities["examType"] = examType
+        }
+
+        // 4c. 检测全真模拟标记
+        if (NLPRegexPatterns.isFullMock(text)) {
+            entities["isFullMock"] = "true"
+        }
+
         // 5. 提取阅读记录
         NLPRegexPatterns.READING_PATTERN.find(text)?.let { match ->
             val bookName = match.groupValues[1].trim()
@@ -171,6 +181,8 @@ class NLPAnalyzer {
         "totalScore" -> "总分"
         "bookName" -> "书名"
         "subject" -> "学科"
+        "examType" -> "考试类型"
+        "isFullMock" -> "全真模拟"
         else -> key
     }
 
@@ -182,6 +194,17 @@ class NLPAnalyzer {
         "chapter" -> "第${value}章"
         "page" -> "第${value}页"
         "score" -> "${value}分"
+        "examType" -> formatExamType(value)
+        "isFullMock" -> "是"
         else -> value
+    }
+
+    private fun formatExamType(type: String): String = when (type) {
+        "MONTHLY" -> "月考"
+        "MIDTERM" -> "期中"
+        "FINAL" -> "期末"
+        "MOCK" -> "模拟考"
+        "SIMULATION" -> "小测"
+        else -> type
     }
 }

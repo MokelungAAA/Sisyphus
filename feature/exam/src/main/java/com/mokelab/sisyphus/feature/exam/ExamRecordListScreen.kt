@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,13 +22,21 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun ExamRecordListScreen(
     viewModel: ExamRecordViewModel,
-    onRecordClick: (Long) -> Unit = {}
+    onRecordClick: (Long) -> Unit = {},
+    onNavigateToStats: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("考试记录") })
+            TopAppBar(
+                title = { Text("考试记录") },
+                actions = {
+                    IconButton(onClick = onNavigateToStats) {
+                        Icon(Icons.Default.DateRange, contentDescription = "考试统计")
+                    }
+                }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { viewModel.showAddDialog() }) {

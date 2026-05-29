@@ -24,6 +24,8 @@ import androidx.navigation.compose.rememberNavController
 import com.mokelab.sisyphus.feature.exam.ExamRecordListScreen
 import com.mokelab.sisyphus.feature.exam.ExamRecordViewModel
 import com.mokelab.sisyphus.feature.home.HomeScreen
+import com.mokelab.sisyphus.feature.stats.ExamStatsScreen
+import com.mokelab.sisyphus.feature.stats.ExamStatsViewModel
 import com.mokelab.sisyphus.feature.home.HomeViewModel
 import com.mokelab.sisyphus.feature.pomodoro.PomodoroScreen
 import com.mokelab.sisyphus.feature.pomodoro.PomodoroViewModel
@@ -126,7 +128,17 @@ fun SisyphusApp() {
             }
             composable("exam") {
                 val viewModel: ExamRecordViewModel = koinViewModel()
-                ExamRecordListScreen(viewModel = viewModel)
+                ExamRecordListScreen(
+                    viewModel = viewModel,
+                    onNavigateToStats = { navController.navigate("exam_stats") }
+                )
+            }
+            composable("exam_stats") {
+                val viewModel: ExamStatsViewModel = koinViewModel()
+                ExamStatsScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable("reading") {
                 val viewModel: ReadingRecordViewModel = koinViewModel()

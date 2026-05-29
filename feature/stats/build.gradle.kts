@@ -39,6 +39,9 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.navigation.compose)
     implementation(libs.koin.core)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.vico.compose)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }

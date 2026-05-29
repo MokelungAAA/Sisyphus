@@ -47,6 +47,36 @@ object NLPRegexPatterns {
         """(?:数学|语文|英语|物理|化学|生物|历史|地理|政治|信息技术|通用技术|体育|音乐|美术)"""
     )
 
+    // 考试类型匹配：月考、期中、期末、模拟、联考、统考
+    val EXAM_TYPE_PATTERN = Regex(
+        """(?:月考|期中|期末|模拟|联考|统考|一模|二模|三模|周测|周考|单元测|单元考|阶段考)"""
+    )
+
+    // 全真模拟/高考标记：全真模拟、高考真题、真题卷
+    val FULL_MOCK_PATTERN = Regex(
+        """(?:全真模拟|高考真题|真题卷|高考卷|全国卷|新高考|全国甲卷|全国乙卷)"""
+    )
+
+    /**
+     * 考试类型关键词到 ExamType 的映射
+     */
+    fun matchExamType(text: String): String? {
+        val match = EXAM_TYPE_PATTERN.find(text) ?: return null
+        return when (match.value) {
+            "月考" -> "MONTHLY"
+            "期中" -> "MIDTERM"
+            "期末" -> "FINAL"
+            "模拟", "一模", "二模", "三模", "联考", "统考" -> "MOCK"
+            "周测", "周考", "单元测", "单元考", "阶段考" -> "SIMULATION"
+            else -> "MOCK"
+        }
+    }
+
+    /**
+     * 检测是否为全真模拟
+     */
+    fun isFullMock(text: String): Boolean = FULL_MOCK_PATTERN.containsMatchIn(text)
+
     /**
      * 获取所有模式
      */
