@@ -23,4 +23,10 @@ class ReviewCardRepositoryImpl(
     override suspend fun delete(card: ReviewCardEntity) = dao.delete(card)
 
     override suspend fun deleteById(id: Long) = dao.deleteById(id)
+
+    override suspend fun getTotalCount(): Int = dao.getTotalCount()
+
+    override suspend fun getCountByState(state: String): Int = dao.getCountByState(state)
+
+    override suspend fun getDueCount(): Int = dao.getDueCount()
 }

@@ -7,7 +7,7 @@ import org.koin.dsl.module
 class ReviewModule : KoinModules {
     override fun modules() = listOf(
         module {
-            viewModel { ReviewCardViewModel(get()) }
+            viewModel { ReviewCardViewModel(get(), get()) }
         }
     )
 }

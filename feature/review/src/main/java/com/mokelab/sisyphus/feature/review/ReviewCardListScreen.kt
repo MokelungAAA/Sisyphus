@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,17 +18,45 @@ import com.mokelab.sisyphus.core.database.entity.ReviewCardEntity
 @Composable
 fun ReviewCardListScreen(
     viewModel: ReviewCardViewModel,
-    onCardClick: (Long) -> Unit = {}
+    onCardClick: (Long) -> Unit = {},
+    onStartReview: () -> Unit = {},
+    onStatistics: () -> Unit = {},
+    onHistory: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("复习卡片") })
+            TopAppBar(
+                title = { Text("复习卡片") },
+                actions = {
+                    TextButton(onClick = onStatistics) {
+                        Text("统计")
+                    }
+                    TextButton(onClick = onHistory) {
+                        Text("历史")
+                    }
+                }
+            )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { viewModel.showAddDialog() }) {
-                Icon(Icons.Default.Add, contentDescription = "添加卡片")
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (uiState.dueCards.isNotEmpty()) {
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            viewModel.startReviewSession()
+                            onStartReview()
+                        },
+                        icon = { Icon(Icons.Default.PlayArrow, contentDescription = "开始复习") },
+                        text = { Text("开始复习") }
+                    )
+                }
+                FloatingActionButton(onClick = { viewModel.showAddDialog() }) {
+                    Icon(Icons.Default.Add, contentDescription = "添加卡片")
+                }
             }
         }
     ) { padding ->

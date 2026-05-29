@@ -11,6 +11,7 @@ val repositoryModule = module {
     single<KnowledgePointRepository> { KnowledgePointRepositoryImpl(get()) }
     single<StudyRecordRepository> { StudyRecordRepositoryImpl(get()) }
     single<ReviewCardRepository> { ReviewCardRepositoryImpl(get()) }
+    single<ReviewHistoryRepository> { ReviewHistoryRepositoryImpl(get()) }
     single<PomodoroSessionRepository> { PomodoroSessionRepositoryImpl(get()) }
     single<ExamRecordRepository> { ExamRecordRepositoryImpl(get()) }
     single<ReadingRecordRepository> { ReadingRecordRepositoryImpl(get()) }

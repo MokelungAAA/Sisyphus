@@ -34,4 +34,13 @@ interface ReviewCardDao {
 
     @Query("DELETE FROM review_cards WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT COUNT(*) FROM review_cards")
+    suspend fun getTotalCount(): Int
+
+    @Query("SELECT COUNT(*) FROM review_cards WHERE state = :state")
+    suspend fun getCountByState(state: String): Int
+
+    @Query("SELECT COUNT(*) FROM review_cards WHERE due <= :now")
+    suspend fun getDueCount(now: Long = System.currentTimeMillis()): Int
 }

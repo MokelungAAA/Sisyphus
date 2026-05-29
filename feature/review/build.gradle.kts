@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.navigation.compose)
+    implementation(libs.work.runtime.ktx)
     implementation(libs.koin.core)
     implementation(libs.koin.androidx.compose)
     implementation(libs.kotlinx.datetime)

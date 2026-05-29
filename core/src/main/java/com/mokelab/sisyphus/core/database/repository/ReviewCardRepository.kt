@@ -12,4 +12,7 @@ interface ReviewCardRepository {
     suspend fun update(card: ReviewCardEntity)
     suspend fun delete(card: ReviewCardEntity)
     suspend fun deleteById(id: Long)
+    suspend fun getTotalCount(): Int
+    suspend fun getCountByState(state: String): Int
+    suspend fun getDueCount(): Int
 }
