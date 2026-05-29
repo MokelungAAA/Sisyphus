@@ -36,6 +36,7 @@ import com.mokelab.sisyphus.feature.reading.ReadingRecordListScreen
 import com.mokelab.sisyphus.feature.reading.ReadingRecordViewModel
 import com.mokelab.sisyphus.feature.review.ReviewCardListScreen
 import com.mokelab.sisyphus.feature.review.ReviewCardViewModel
+import com.mokelab.sisyphus.feature.achievement.AchievementScreen
 import com.mokelab.sisyphus.feature.search.SearchScreen
 import com.mokelab.sisyphus.feature.settings.SettingsScreen
 import com.mokelab.sisyphus.feature.sync.SyncLifecycleObserver
@@ -128,7 +129,8 @@ fun SisyphusApp() {
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(
-                    onNavigateToSync = { navController.navigate("sync") }
+                    onNavigateToSync = { navController.navigate("sync") },
+                    onNavigateToAchievement = { navController.navigate("achievement") }
                 )
             }
 
@@ -171,6 +173,9 @@ fun SisyphusApp() {
             composable("reading") {
                 val viewModel: ReadingRecordViewModel = koinViewModel()
                 ReadingRecordListScreen(viewModel = viewModel)
+            }
+            composable("achievement") {
+                AchievementScreen(navController = navController)
             }
         }
     }

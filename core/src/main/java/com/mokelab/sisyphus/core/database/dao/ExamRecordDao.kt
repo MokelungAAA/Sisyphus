@@ -38,4 +38,7 @@ interface ExamRecordDao {
 
     @Query("SELECT * FROM exam_records WHERE examName LIKE '%' || :query || '%' ORDER BY examDate DESC")
     suspend fun search(query: String): List<ExamRecordEntity>
+
+    @Query("SELECT COUNT(*) FROM exam_records")
+    suspend fun getCount(): Int
 }

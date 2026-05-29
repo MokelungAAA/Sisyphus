@@ -35,4 +35,7 @@ interface PomodoroSessionDao {
 
     @Query("SELECT * FROM pomodoro_sessions WHERE updatedAt > :since")
     suspend fun getModifiedSince(since: Instant): List<PomodoroSessionEntity>
+
+    @Query("SELECT COUNT(*) FROM pomodoro_sessions")
+    suspend fun getCount(): Int
 }

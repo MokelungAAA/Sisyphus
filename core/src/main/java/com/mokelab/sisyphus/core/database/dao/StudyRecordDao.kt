@@ -38,4 +38,16 @@ interface StudyRecordDao {
 
     @Query("SELECT * FROM study_records WHERE note LIKE '%' || :query || '%' ORDER BY createdAt DESC")
     suspend fun search(query: String): List<StudyRecordEntity>
+
+    @Query("SELECT SUM(durationMinutes) FROM study_records")
+    suspend fun getTotalMinutes(): Long?
+
+    @Query("SELECT SUM(xpEarned) FROM study_records")
+    suspend fun getTotalXp(): Long?
+
+    @Query("SELECT * FROM study_records ORDER BY createdAt DESC")
+    suspend fun getAllOrderedByDate(): List<StudyRecordEntity>
+
+    @Query("SELECT * FROM study_records WHERE createdAt BETWEEN :startTime AND :endTime")
+    suspend fun getRecordsBetween(startTime: Long, endTime: Long): List<StudyRecordEntity>
 }

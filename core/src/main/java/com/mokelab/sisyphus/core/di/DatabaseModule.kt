@@ -3,6 +3,7 @@ package com.mokelab.sisyphus.core.di
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mokelab.sisyphus.core.database.MIGRATION_4_5
 import com.mokelab.sisyphus.core.database.SisyphusDatabase
 import org.koin.dsl.module
 
@@ -13,7 +14,7 @@ val databaseModule = module {
             SisyphusDatabase::class.java,
             "sisyphus.db"
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
     }
 
@@ -28,6 +29,7 @@ val databaseModule = module {
     single { get<SisyphusDatabase>().pomodoroSessionDao() }
     single { get<SisyphusDatabase>().examRecordDao() }
     single { get<SisyphusDatabase>().readingRecordDao() }
+    single { get<SisyphusDatabase>().achievementDao() }
 }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {

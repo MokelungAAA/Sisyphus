@@ -3,7 +3,10 @@ package com.mokelab.sisyphus.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mokelab.sisyphus.core.database.converter.Converters
+import com.mokelab.sisyphus.core.database.dao.AchievementDao
 import com.mokelab.sisyphus.core.database.dao.ChapterDao
 import com.mokelab.sisyphus.core.database.dao.ExamRecordDao
 import com.mokelab.sisyphus.core.database.dao.KnowledgePointDao
@@ -15,6 +18,7 @@ import com.mokelab.sisyphus.core.database.dao.SectionDao
 import com.mokelab.sisyphus.core.database.dao.StudyRecordDao
 import com.mokelab.sisyphus.core.database.dao.SubjectDao
 import com.mokelab.sisyphus.core.database.dao.TextbookDao
+import com.mokelab.sisyphus.core.database.entity.AchievementEntity
 import com.mokelab.sisyphus.core.database.entity.ChapterEntity
 import com.mokelab.sisyphus.core.database.entity.ExamRecordEntity
 import com.mokelab.sisyphus.core.database.entity.KnowledgePointEntity
@@ -26,6 +30,22 @@ import com.mokelab.sisyphus.core.database.entity.SectionEntity
 import com.mokelab.sisyphus.core.database.entity.StudyRecordEntity
 import com.mokelab.sisyphus.core.database.entity.SubjectEntity
 import com.mokelab.sisyphus.core.database.entity.TextbookEntity
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS achievements (
+                id TEXT NOT NULL PRIMARY KEY,
+                category TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                iconRes TEXT NOT NULL,
+                rarity TEXT NOT NULL,
+                unlockedAt INTEGER
+            )
+        """)
+    }
+}
 
 @Database(
     entities = [
@@ -40,8 +60,9 @@ import com.mokelab.sisyphus.core.database.entity.TextbookEntity
         PomodoroSessionEntity::class,
         ExamRecordEntity::class,
         ReadingRecordEntity::class,
+        AchievementEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -57,4 +78,5 @@ abstract class SisyphusDatabase : RoomDatabase() {
     abstract fun pomodoroSessionDao(): PomodoroSessionDao
     abstract fun examRecordDao(): ExamRecordDao
     abstract fun readingRecordDao(): ReadingRecordDao
+    abstract fun achievementDao(): AchievementDao
 }

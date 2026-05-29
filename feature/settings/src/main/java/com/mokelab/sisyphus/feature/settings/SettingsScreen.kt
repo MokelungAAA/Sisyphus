@@ -16,7 +16,8 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateToSync: () -> Unit = {}
+    onNavigateToSync: () -> Unit = {},
+    onNavigateToAchievement: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -96,6 +97,16 @@ fun SettingsScreen(
                     title = "每日学习目标",
                     subtitle = "4小时",
                     onClick = { }
+                )
+            }
+
+            // 成就
+            SettingsSection(title = "游戏化") {
+                SettingsItem(
+                    icon = Icons.Default.ThumbUp,
+                    title = "成就系统",
+                    subtitle = "查看已解锁成就",
+                    onClick = onNavigateToAchievement
                 )
             }
 

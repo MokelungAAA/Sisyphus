@@ -38,4 +38,7 @@ interface SubjectDao {
 
     @Query("SELECT * FROM subjects WHERE name LIKE '%' || :query || '%'")
     suspend fun search(query: String): List<SubjectEntity>
+
+    @Query("SELECT COUNT(*) FROM subjects")
+    suspend fun getCount(): Int
 }
