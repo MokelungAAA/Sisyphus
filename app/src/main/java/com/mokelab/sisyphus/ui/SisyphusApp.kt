@@ -35,6 +35,8 @@ import com.mokelab.sisyphus.feature.review.ReviewCardListScreen
 import com.mokelab.sisyphus.feature.review.ReviewCardViewModel
 import com.mokelab.sisyphus.feature.search.SearchScreen
 import com.mokelab.sisyphus.feature.settings.SettingsScreen
+import com.mokelab.sisyphus.feature.sync.SyncSettingsScreen
+import com.mokelab.sisyphus.feature.sync.SyncViewModel
 import com.mokelab.sisyphus.feature.subject.SubjectDetailScreen
 import com.mokelab.sisyphus.feature.subject.SubjectDetailViewModel
 import com.mokelab.sisyphus.feature.subject.SubjectScreen
@@ -109,7 +111,17 @@ fun SisyphusApp() {
                 SearchScreen()
             }
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(
+                    onNavigateToSync = { navController.navigate("sync") }
+                )
+            }
+
+            composable("sync") {
+                val viewModel: SyncViewModel = koinViewModel()
+                SyncSettingsScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable("pomodoro") {
                 val viewModel: PomodoroViewModel = koinViewModel()

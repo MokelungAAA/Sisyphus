@@ -15,7 +15,9 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    onNavigateToSync: () -> Unit = {}
+) {
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("设置") })
@@ -43,7 +45,7 @@ fun SettingsScreen() {
                     icon = Icons.Default.Refresh,
                     title = "OneDrive同步",
                     subtitle = "未连接",
-                    onClick = { }
+                    onClick = onNavigateToSync
                 )
                 SettingsItem(
                     icon = Icons.Default.Share,

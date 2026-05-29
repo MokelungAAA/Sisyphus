@@ -13,6 +13,7 @@ import com.mokelab.sisyphus.feature.reading.ReadingModule
 import com.mokelab.sisyphus.feature.review.ReviewModule
 import com.mokelab.sisyphus.feature.stats.statsModule
 import com.mokelab.sisyphus.feature.subject.SubjectModule
+import com.mokelab.sisyphus.feature.sync.syncModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -36,7 +37,8 @@ class SisyphusApp : Application() {
                 *ReviewModule().modules().toTypedArray(),
                 nlpModule,
                 recommendationModule,
-                statsModule
+                statsModule,
+                syncModule
             )
         }
     }
