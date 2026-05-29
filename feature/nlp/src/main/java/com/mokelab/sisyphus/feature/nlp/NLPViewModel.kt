@@ -1,20 +1,29 @@
 package com.mokelab.sisyphus.feature.nlp
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class NLPInputUiState(
     val text: String = "",
     val nlpResult: NLPResult? = null,
-    val isAnalyzing: Boolean = false
+    val isAnalyzing: Boolean = false,
+    val layer: NLPManager.Layer = NLPManager.Layer.REGEX,
+    val needsConfirmation: Boolean = false,
+    val showConfirmationSheet: Boolean = false,
+    val editedEntities: Map<String, String> = emptyMap()
 )
 
-class NLPViewModel : ViewModel() {
+class NLPViewModel(
+    private val context: Context
+) : ViewModel() {
 
-    private val analyzer = NLPAnalyzer()
+    private val nlpManager = NLPManager(context)
 
     private val _uiState = MutableStateFlow(NLPInputUiState())
     val uiState: StateFlow<NLPInputUiState> = _uiState.asStateFlow()
@@ -23,14 +32,29 @@ class NLPViewModel : ViewModel() {
      * 更新输入文本并进行分析
      */
     fun updateText(text: String) {
-        _uiState.update { it.copy(text = text) }
+        _uiState.update { it.copy(text = text, isAnalyzing = true) }
 
-        // 实时分析
-        if (text.isNotBlank()) {
-            val result = analyzer.analyze(text)
-            _uiState.update { it.copy(nlpResult = result) }
-        } else {
-            _uiState.update { it.copy(nlpResult = null) }
+        viewModelScope.launch {
+            if (text.isNotBlank()) {
+                val result = nlpManager.analyze(text)
+                _uiState.update {
+                    it.copy(
+                        nlpResult = result.nlpResult,
+                        layer = result.layer,
+                        needsConfirmation = result.needsConfirmation,
+                        editedEntities = result.nlpResult.entities,
+                        isAnalyzing = false
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        nlpResult = null,
+                        isAnalyzing = false,
+                        editedEntities = emptyMap()
+                    )
+                }
+            }
         }
     }
 
@@ -39,6 +63,48 @@ class NLPViewModel : ViewModel() {
      */
     fun clearText() {
         _uiState.update { NLPInputUiState() }
+    }
+
+    /**
+     * 显示确认面板
+     */
+    fun showConfirmation() {
+        _uiState.update { it.copy(showConfirmationSheet = true) }
+    }
+
+    /**
+     * 隐藏确认面板
+     */
+    fun hideConfirmation() {
+        _uiState.update { it.copy(showConfirmationSheet = false) }
+    }
+
+    /**
+     * 更新编辑的实体
+     */
+    fun updateEntity(key: String, value: String) {
+        _uiState.update {
+            it.copy(editedEntities = it.editedEntities + (key to value))
+        }
+    }
+
+    /**
+     * 删除实体
+     */
+    fun removeEntity(key: String) {
+        _uiState.update {
+            it.copy(editedEntities = it.editedEntities - key)
+        }
+    }
+
+    /**
+     * 确认并提交
+     * 返回编辑后的实体数据
+     */
+    fun confirmAndSubmit(): Map<String, String> {
+        val entities = _uiState.value.editedEntities
+        hideConfirmation()
+        return entities
     }
 
     /**
@@ -79,5 +145,21 @@ class NLPViewModel : ViewModel() {
         }
 
         return parts.joinToString("\n")
+    }
+
+    /**
+     * 获取层级显示名
+     */
+    fun getLayerDisplayName(): String = when (_uiState.value.layer) {
+        NLPManager.Layer.REGEX -> "正则匹配"
+        NLPManager.Layer.JIEBA -> "智能分词"
+        NLPManager.Layer.LLM -> "AI分析"
+    }
+
+    /**
+     * 配置LLM API
+     */
+    fun configureLLM(provider: LLMAnalyzer.LLMProvider, apiKey: String) {
+        nlpManager.configureLLM(provider, apiKey)
     }
 }

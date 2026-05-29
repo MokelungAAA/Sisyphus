@@ -29,7 +29,9 @@ enum class PatternType {
     PAGE,          // 页码
     STUDY_TYPE,    // 学习类型
     EXAM_SCORE,    // 考试成绩
-    READING        // 阅读记录
+    READING,       // 阅读记录
+    SUBJECT,       // 学科
+    TEXTBOOK       // 教材
 }
 
 /**

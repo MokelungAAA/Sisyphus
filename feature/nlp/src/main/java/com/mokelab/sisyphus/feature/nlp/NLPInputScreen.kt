@@ -1,261 +1,283 @@
 package com.mokelab.sisyphus.feature.nlp
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.mokelab.sisyphus.core.ui.theme.*
+import com.mokelab.sisyphus.core.ui.theme.PomodoroRed
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalLayoutApi::class)
-
-// Pattern highlight colors
-private val patternColors = mapOf(
-    PatternType.DURATION to Color(0xFF4CAF50),      // Green
-    PatternType.CHAPTER to Color(0xFF2196F3),       // Blue
-    PatternType.PAGE to Color(0xFF9C27B0),          // Purple
-    PatternType.STUDY_TYPE to Color(0xFFFF9800),    // Orange
-    PatternType.EXAM_SCORE to Color(0xFFE91E63),    // Pink
-    PatternType.READING to Color(0xFF00BCD4)        // Cyan
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * NLP智能输入界面
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NLPInputScreen(
-    viewModel: NLPViewModel = koinViewModel(),
-    onResult: (NLPResult) -> Unit = {}
+    onSubmit: (Map<String, String>) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: NLPViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("智能录入") }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            // Input field with highlighting
-            OutlinedTextField(
-                value = uiState.text,
-                onValueChange = { viewModel.updateText(it) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("输入学习内容...") },
-                placeholder = { Text("例如：学了2小时数学，做了第3章的题目") },
-                trailingIcon = {
-                    if (uiState.text.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.clearText() }) {
-                            Icon(Icons.Default.Clear, contentDescription = "清空")
-                        }
-                    }
-                },
-                minLines = 3,
-                maxLines = 5
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Highlighted preview
-            if (uiState.nlpResult != null && uiState.nlpResult!!.matchedPatterns.isNotEmpty()) {
-                Text(
-                    text = "识别结果",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Highlighted text
-                HighlightedText(
-                    text = uiState.text,
-                    patterns = uiState.nlpResult!!.matchedPatterns
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Extracted entities
-                EntityChips(entities = uiState.nlpResult!!.entities)
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Intent and confidence
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Intent chip
-                    SuggestionChip(
-                        onClick = {},
-                        label = { Text(uiState.nlpResult!!.intent.displayName) }
-                    )
-
-                    // Confidence
-                    Text(
-                        text = "置信度: ${(uiState.nlpResult!!.confidence * 100).toInt()}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Result summary
-                val summary = viewModel.getResultSummary()
-                if (summary.isNotEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
-                    ) {
-                        Text(
-                            text = summary,
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        // 输入框
+        OutlinedTextField(
+            value = uiState.text,
+            onValueChange = { viewModel.updateText(it) },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("智能输入") },
+            placeholder = { Text("例如：数学必修一第一章 30分钟") },
+            trailingIcon = {
+                if (uiState.text.isNotEmpty()) {
+                    IconButton(onClick = { viewModel.clearText() }) {
+                        Icon(Icons.Default.Clear, contentDescription = "清空")
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Confirm button
-                Button(
-                    onClick = { onResult(uiState.nlpResult!!) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("确认录入")
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    focusManager.clearFocus()
+                    if (uiState.nlpResult != null) {
+                        viewModel.showConfirmation()
+                    }
                 }
-            } else if (uiState.text.isNotEmpty()) {
-                // No patterns matched
+            ),
+            singleLine = false,
+            maxLines = 3
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 分析状态指示
+        AnimatedVisibility(visible = uiState.isAnalyzing) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 4.dp)
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "正在分析...",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Pattern legend
-            PatternLegend()
         }
+
+        // 分析结果
+        AnimatedVisibility(visible = uiState.nlpResult != null && !uiState.isAnalyzing) {
+            uiState.nlpResult?.let { result ->
+                Column {
+                    // 层级指示
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Text(
+                            text = "分析方式: ${viewModel.getLayerDisplayName()}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        ConfidenceIndicator(confidence = result.confidence)
+                    }
+
+                    // 实体标签
+                    EntityChips(entities = result.entities)
+
+                    // 匹配到的模式
+                    if (result.matchedPatterns.isNotEmpty()) {
+                        PatternLegend(patterns = result.matchedPatterns)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 确认按钮
+                    Button(
+                        onClick = { viewModel.showConfirmation() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PomodoroRed
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("确认并编辑")
+                    }
+                }
+            }
+        }
+    }
+
+    // 确认底部面板
+    if (uiState.showConfirmationSheet) {
+        ConfirmationBottomSheet(
+            entities = uiState.editedEntities,
+            onEntityUpdate = { key, value -> viewModel.updateEntity(key, value) },
+            onEntityRemove = { key -> viewModel.removeEntity(key) },
+            onConfirm = {
+                val entities = viewModel.confirmAndSubmit()
+                onSubmit(entities)
+            },
+            onDismiss = { viewModel.hideConfirmation() }
+        )
     }
 }
 
+/**
+ * 置信度指示器
+ */
 @Composable
-private fun HighlightedText(text: String, patterns: List<MatchedPattern>) {
-    val annotatedString = buildAnnotatedString {
-        var lastIndex = 0
-
-        // Sort patterns by start index
-        val sortedPatterns = patterns.sortedBy { it.startIndex }
-
-        for (pattern in sortedPatterns) {
-            // Add text before this pattern
-            if (pattern.startIndex > lastIndex) {
-                append(text.substring(lastIndex, pattern.startIndex))
-            }
-
-            // Add highlighted pattern
-            val color = patternColors[pattern.type] ?: Color.Gray
-            withStyle(
-                SpanStyle(
-                    color = color,
-                    fontWeight = FontWeight.Bold,
-                    background = color.copy(alpha = 0.1f)
-                )
-            ) {
-                append(text.substring(pattern.startIndex, pattern.endIndex))
-            }
-
-            lastIndex = pattern.endIndex
-        }
-
-        // Add remaining text
-        if (lastIndex < text.length) {
-            append(text.substring(lastIndex))
-        }
+private fun ConfidenceIndicator(confidence: Float) {
+    val color = when {
+        confidence >= 0.7f -> Color(0xFF4CAF50) // 绿色
+        confidence >= 0.4f -> Color(0xFFFF9800) // 橙色
+        else -> Color(0xFFF44336) // 红色
     }
 
-    Text(
-        text = annotatedString,
-        style = MaterialTheme.typography.bodyLarge,
+    val text = when {
+        confidence >= 0.7f -> "高"
+        confidence >= 0.4f -> "中"
+        else -> "低"
+    }
+
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(12.dp)
-    )
+            .clip(RoundedCornerShape(4.dp))
+            .background(color.copy(alpha = 0.1f))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = "置信度: $text",
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Medium
+        )
+    }
 }
 
+/**
+ * 实体标签
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EntityChips(entities: Map<String, String>) {
     val analyzer = NLPAnalyzer()
 
     FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         entities.forEach { (key, value) ->
-            SuggestionChip(
-                onClick = {},
+            FilterChip(
+                selected = true,
+                onClick = { },
                 label = {
-                    Text("${analyzer.getEntityDisplayName(key)}: ${analyzer.formatEntityValue(key, value)}")
+                    Text(
+                        text = "${analyzer.getEntityDisplayName(key)}: ${analyzer.formatEntityValue(key, value)}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             )
         }
     }
 }
 
+/**
+ * 模式图例
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PatternLegend() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = "颜色说明",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+private fun PatternLegend(patterns: List<MatchedPattern>) {
+    val grouped = patterns.groupBy { it.type }
 
-            patternColors.forEach { (type, color) ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 2.dp)
+    Column(
+        modifier = Modifier.padding(top = 8.dp)
+    ) {
+        Text(
+            text = "识别模式:",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            grouped.keys.forEach { type ->
+                val color = when (type) {
+                    PatternType.DURATION -> Color(0xFF2196F3)
+                    PatternType.CHAPTER -> Color(0xFF4CAF50)
+                    PatternType.PAGE -> Color(0xFFFF9800)
+                    PatternType.STUDY_TYPE -> Color(0xFF9C27B0)
+                    PatternType.EXAM_SCORE -> Color(0xFFF44336)
+                    PatternType.READING -> Color(0xFF795548)
+                    PatternType.SUBJECT -> Color(0xFF00BCD4)
+                    PatternType.TEXTBOOK -> Color(0xFFE91E63)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(color.copy(alpha = 0.1f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(color)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = when (type) {
                             PatternType.DURATION -> "时长"
@@ -264,11 +286,97 @@ private fun PatternLegend() {
                             PatternType.STUDY_TYPE -> "学习类型"
                             PatternType.EXAM_SCORE -> "成绩"
                             PatternType.READING -> "阅读"
+                            PatternType.SUBJECT -> "学科"
+                            PatternType.TEXTBOOK -> "教材"
                         },
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * 确认底部面板
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun ConfirmationBottomSheet(
+    entities: Map<String, String>,
+    onEntityUpdate: (String, String) -> Unit,
+    onEntityRemove: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState()
+    val analyzer = NLPAnalyzer()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            // 标题
+            Text(
+                text = "确认学习数据",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // 可编辑的实体列表
+            entities.forEach { (key, value) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = value,
+                        onValueChange = { onEntityUpdate(key, it) },
+                        modifier = Modifier.weight(1f),
+                        label = { Text(analyzer.getEntityDisplayName(key)) },
+                        singleLine = true
+                    )
+                    IconButton(onClick = { onEntityRemove(key) }) {
+                        Icon(
+                            Icons.Default.Clear,
+                            contentDescription = "删除",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 操作按钮
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text("取消")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = onConfirm,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PomodoroRed
+                    )
+                ) {
+                    Text("确认提交")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
