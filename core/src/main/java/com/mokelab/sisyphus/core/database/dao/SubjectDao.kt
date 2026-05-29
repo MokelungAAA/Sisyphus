@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.mokelab.sisyphus.core.database.entity.SubjectEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 /**
  * 学科DAO
@@ -31,4 +32,7 @@ interface SubjectDao {
 
     @Query("DELETE FROM subjects WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM subjects WHERE updatedAt > :since")
+    suspend fun getModifiedSince(since: Instant): List<SubjectEntity>
 }

@@ -15,13 +15,17 @@ data class SyncUiState(
     val isSyncing: Boolean = false,
     val lastSyncTime: String = "从未同步",
     val message: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    val uploaded: Int = 0,
+    val downloaded: Int = 0,
+    val conflicts: List<SyncConflict> = emptyList()
 )
 
 class SyncViewModel(
     private val authManager: AuthManager,
     private val syncService: SyncService,
-    private val tokenStorage: TokenStorage
+    private val tokenStorage: TokenStorage,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SyncUiState())
@@ -122,6 +126,39 @@ class SyncViewModel(
                 }
             )
         }
+    }
+
+    /**
+     * 手动同步
+     */
+    fun manualSync() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSyncing = true, error = null, message = null)
+            val result = syncManager.sync()
+            if (result.success) {
+                checkAuthState()
+                _uiState.value = _uiState.value.copy(
+                    isSyncing = false,
+                    message = "同步完成: 上传 ${result.uploaded}, 下载 ${result.downloaded}",
+                    uploaded = result.uploaded,
+                    downloaded = result.downloaded,
+                    conflicts = result.conflicts
+                )
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isSyncing = false,
+                    error = "同步失败: ${result.error}"
+                )
+            }
+        }
+    }
+
+    /**
+     * 清除冲突
+     */
+    fun clearConflicts() {
+        syncManager.clearConflicts()
+        _uiState.value = _uiState.value.copy(conflicts = emptyList())
     }
 
     /**

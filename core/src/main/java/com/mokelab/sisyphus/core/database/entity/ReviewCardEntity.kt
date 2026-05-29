@@ -46,4 +46,5 @@ data class ReviewCardEntity(
     val due: Instant,
     val lastReview: Instant? = null,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
 )

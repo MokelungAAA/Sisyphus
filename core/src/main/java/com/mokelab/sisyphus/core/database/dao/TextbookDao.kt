@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.mokelab.sisyphus.core.database.entity.TextbookEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 @Dao
 interface TextbookDao {
@@ -28,4 +29,7 @@ interface TextbookDao {
 
     @Query("DELETE FROM textbooks WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM textbooks WHERE updatedAt > :since")
+    suspend fun getModifiedSince(since: Instant): List<TextbookEntity>
 }

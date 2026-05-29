@@ -80,7 +80,7 @@ fun SyncSettingsScreen(
             if (uiState.isAuthenticated) {
                 // 同步按钮
                 Button(
-                    onClick = { viewModel.uploadData("{}") }, // TODO: 实际序列化数据
+                    onClick = { viewModel.manualSync() },
                     enabled = !uiState.isSyncing,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -95,6 +95,46 @@ fun SyncSettingsScreen(
                         Icon(Icons.Default.Sync, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("立即同步")
+                    }
+                }
+
+                // 同步结果
+                if (uiState.uploaded > 0 || uiState.downloaded > 0) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Text(
+                            text = "上传: ${uiState.uploaded} | 下载: ${uiState.downloaded}",
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+
+                // 冲突通知
+                if (uiState.conflicts.isNotEmpty()) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "发现 ${uiState.conflicts.size} 个冲突",
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = "已使用最新版本自动解决",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TextButton(onClick = { viewModel.clearConflicts() }) {
+                                Text("清除")
+                            }
+                        }
                     }
                 }
 

@@ -43,4 +43,5 @@ data class PomodoroSessionEntity(
     val isCompleted: Boolean = false,
     val presetType: PresetType = PresetType.CLASSIC,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
 )

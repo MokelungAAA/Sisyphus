@@ -28,4 +28,5 @@ data class SectionEntity(
     val name: String,
     val orderIndex: Int,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
 )

@@ -12,9 +12,12 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -35,12 +38,14 @@ import com.mokelab.sisyphus.feature.review.ReviewCardListScreen
 import com.mokelab.sisyphus.feature.review.ReviewCardViewModel
 import com.mokelab.sisyphus.feature.search.SearchScreen
 import com.mokelab.sisyphus.feature.settings.SettingsScreen
+import com.mokelab.sisyphus.feature.sync.SyncLifecycleObserver
 import com.mokelab.sisyphus.feature.sync.SyncSettingsScreen
 import com.mokelab.sisyphus.feature.sync.SyncViewModel
 import com.mokelab.sisyphus.feature.subject.SubjectDetailScreen
 import com.mokelab.sisyphus.feature.subject.SubjectDetailViewModel
 import com.mokelab.sisyphus.feature.subject.SubjectScreen
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     data object Home : Screen("home", "首页", Icons.Default.Home)
@@ -59,6 +64,17 @@ val bottomNavItems = listOf(
 @Composable
 fun SisyphusApp() {
     val navController = rememberNavController()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val syncLifecycleObserver: SyncLifecycleObserver = koinInject()
+    val coroutineScope = rememberCoroutineScope()
+
+    // 注册同步生命周期观察者
+    DisposableEffect(lifecycleOwner, syncLifecycleObserver) {
+        lifecycleOwner.lifecycle.addObserver(syncLifecycleObserver)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(syncLifecycleObserver)
+        }
+    }
 
     Scaffold(
         bottomBar = {

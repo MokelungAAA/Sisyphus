@@ -46,4 +46,5 @@ data class TextbookEntity(
     val type: TextbookType,
     val source: TextbookSource,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
 )

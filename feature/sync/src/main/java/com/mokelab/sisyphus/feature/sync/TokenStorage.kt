@@ -81,8 +81,65 @@ class TokenStorage(context: Context) {
         return prefs.getLong(KEY_LAST_SYNC, 0L)
     }
 
+    /**
+     * 获取最后同步时间戳
+     */
+    fun getLastSyncTimestamp(): Long {
+        return prefs.getLong(KEY_LAST_SYNC, 0L)
+    }
+
+    /**
+     * 保存最后同步时间戳
+     */
+    fun saveLastSyncTimestamp(timeMillis: Long) {
+        prefs.edit()
+            .putLong(KEY_LAST_SYNC, timeMillis)
+            .apply()
+    }
+
+    /**
+     * 获取设备ID
+     */
+    fun getDeviceId(): String {
+        return prefs.getString(KEY_DEVICE_ID, "") ?: ""
+    }
+
+    /**
+     * 保存设备ID
+     */
+    fun saveDeviceId(deviceId: String) {
+        prefs.edit()
+            .putString(KEY_DEVICE_ID, deviceId)
+            .apply()
+    }
+
+    /**
+     * 获取同步元数据
+     */
+    fun getSyncMetadata(): String {
+        return prefs.getString(KEY_SYNC_METADATA, "") ?: ""
+    }
+
+    /**
+     * 保存同步元数据
+     */
+    fun saveSyncMetadata(metadata: String) {
+        prefs.edit()
+            .putString(KEY_SYNC_METADATA, metadata)
+            .apply()
+    }
+
+    /**
+     * 清除所有数据
+     */
+    fun clear() {
+        prefs.edit().clear().apply()
+    }
+
     companion object {
         private const val KEY_TOKENS = "oauth_tokens"
         private const val KEY_LAST_SYNC = "last_sync_time"
+        private const val KEY_DEVICE_ID = "device_id"
+        private const val KEY_SYNC_METADATA = "sync_metadata"
     }
 }

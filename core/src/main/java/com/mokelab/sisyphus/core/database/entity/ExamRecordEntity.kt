@@ -44,4 +44,5 @@ data class ExamRecordEntity(
     val isFullMock: Boolean = false,
     val examDate: Instant,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
 )

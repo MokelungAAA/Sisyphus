@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.mokelab.sisyphus.core.database.entity.SectionEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 @Dao
 interface SectionDao {
@@ -28,4 +29,7 @@ interface SectionDao {
 
     @Query("DELETE FROM sections WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM sections WHERE updatedAt > :since")
+    suspend fun getModifiedSince(since: Instant): List<SectionEntity>
 }

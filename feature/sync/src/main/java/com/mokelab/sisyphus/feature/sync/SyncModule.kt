@@ -8,5 +8,8 @@ val syncModule = module {
     single { TokenStorage(androidContext()) }
     single { AuthManager(androidContext(), get()) }
     single { SyncService(get(), get()) }
-    viewModel { SyncViewModel(get(), get(), get()) }
+    single { ConflictResolver() }
+    single { SyncManager(androidContext(), get(), get(), get(), get()) }
+    single { SyncLifecycleObserver(get(), get()) }
+    viewModel { SyncViewModel(get(), get(), get(), get()) }
 }

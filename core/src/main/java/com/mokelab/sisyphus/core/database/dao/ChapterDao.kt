@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.mokelab.sisyphus.core.database.entity.ChapterEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 @Dao
 interface ChapterDao {
@@ -28,4 +29,7 @@ interface ChapterDao {
 
     @Query("DELETE FROM chapters WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM chapters WHERE updatedAt > :since")
+    suspend fun getModifiedSince(since: Instant): List<ChapterEntity>
 }

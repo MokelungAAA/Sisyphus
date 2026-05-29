@@ -151,6 +151,24 @@ class AuthManager(
      * 是否已认证
      */
     fun isAuthenticated(): Boolean = tokenStorage.isAuthenticated()
+
+    /**
+     * 获取授权 URL
+     */
+    fun getAuthorizationUrl(): String? {
+        return try {
+            buildAuthUrl()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * 用授权码换取 tokens (别名)
+     */
+    suspend fun exchangeCode(code: String): Result<OAuthTokens> {
+        return handleAuthCallback(code)
+    }
 }
 
 /**

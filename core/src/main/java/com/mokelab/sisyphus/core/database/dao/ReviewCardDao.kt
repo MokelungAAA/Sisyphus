@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.mokelab.sisyphus.core.database.entity.ReviewCardEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 @Dao
 interface ReviewCardDao {
@@ -43,4 +44,7 @@ interface ReviewCardDao {
 
     @Query("SELECT COUNT(*) FROM review_cards WHERE due <= :now")
     suspend fun getDueCount(now: Long = System.currentTimeMillis()): Int
+
+    @Query("SELECT * FROM review_cards WHERE updatedAt > :since")
+    suspend fun getModifiedSince(since: Instant): List<ReviewCardEntity>
 }

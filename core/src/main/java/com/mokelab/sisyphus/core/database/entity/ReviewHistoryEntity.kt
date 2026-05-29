@@ -34,4 +34,5 @@ data class ReviewHistoryEntity(
     val intervalAfter: Int,
     val reviewTime: Instant,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
 )

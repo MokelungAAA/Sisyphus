@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.mokelab.sisyphus.core.database.entity.KnowledgePointEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 @Dao
 interface KnowledgePointDao {
@@ -28,4 +29,7 @@ interface KnowledgePointDao {
 
     @Query("DELETE FROM knowledge_points WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM knowledge_points WHERE updatedAt > :since")
+    suspend fun getModifiedSince(since: Instant): List<KnowledgePointEntity>
 }

@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.mokelab.sisyphus.core.database.entity.ReadingRecordEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 @Dao
 interface ReadingRecordDao {
@@ -28,4 +29,7 @@ interface ReadingRecordDao {
 
     @Query("DELETE FROM reading_records WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM reading_records WHERE updatedAt > :since")
+    suspend fun getModifiedSince(since: Instant): List<ReadingRecordEntity>
 }

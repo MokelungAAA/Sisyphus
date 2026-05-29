@@ -13,7 +13,7 @@ val databaseModule = module {
             SisyphusDatabase::class.java,
             "sisyphus.db"
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
     }
 
@@ -55,5 +55,21 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("ALTER TABLE `reading_records` ADD COLUMN `readingType` TEXT NOT NULL DEFAULT 'BOOK'")
+    }
+}
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add updatedAt column to all entities for incremental sync
+        val tables = listOf(
+            "textbooks", "chapters", "sections", "knowledge_points",
+            "study_records", "review_cards", "review_history",
+            "pomodoro_sessions", "exam_records", "reading_records"
+        )
+        for (table in tables) {
+            database.execSQL("ALTER TABLE `$table` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+            // Set updatedAt = createdAt for existing records
+            database.execSQL("UPDATE `$table` SET `updatedAt` = `createdAt`")
+        }
     }
 }

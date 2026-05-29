@@ -41,7 +41,7 @@ import com.mokelab.sisyphus.core.database.entity.TextbookEntity
         ExamRecordEntity::class,
         ReadingRecordEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

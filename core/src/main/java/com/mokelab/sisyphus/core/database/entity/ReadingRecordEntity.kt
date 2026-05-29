@@ -28,4 +28,5 @@ data class ReadingRecordEntity(
     val endTime: Instant,
     val note: String? = null,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
 )

@@ -38,4 +38,5 @@ data class KnowledgePointEntity(
     val content: String? = null,
     val source: KnowledgePointSource,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
 )

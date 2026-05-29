@@ -56,4 +56,5 @@ data class StudyRecordEntity(
     val xpEarned: Float = 0f,
     val note: String? = null,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
 )

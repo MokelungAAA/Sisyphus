@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.mokelab.sisyphus.core.database.entity.ReviewHistoryEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 @Dao
 interface ReviewHistoryDao {
@@ -39,4 +40,7 @@ interface ReviewHistoryDao {
 
     @Query("DELETE FROM review_history WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM review_history WHERE updatedAt > :since")
+    suspend fun getModifiedSince(since: Instant): List<ReviewHistoryEntity>
 }
