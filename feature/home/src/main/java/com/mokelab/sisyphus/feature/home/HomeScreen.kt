@@ -42,6 +42,8 @@ import com.mokelab.sisyphus.core.ui.theme.Sky500
 import com.mokelab.sisyphus.core.ui.theme.Sky400
 import com.mokelab.sisyphus.core.ui.theme.Sky100
 import com.mokelab.sisyphus.core.ui.theme.LightError
+import com.mokelab.sisyphus.feature.recommendation.RecommendationCard
+import com.mokelab.sisyphus.feature.recommendation.RecommendationViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -49,9 +51,11 @@ fun HomeScreen(
     onNavigateToSubject: (Long) -> Unit,
     onNavigateToPomodoro: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = koinViewModel()
+    viewModel: HomeViewModel = koinViewModel(),
+    recommendationViewModel: RecommendationViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val recommendationState by recommendationViewModel.uiState.collectAsState()
 
     Box(modifier = modifier.fillMaxSize()) {
         when {
@@ -68,6 +72,7 @@ fun HomeScreen(
             else -> {
                 HomeContent(
                     uiState = uiState,
+                    recommendationState = recommendationState,
                     onNavigateToSubject = onNavigateToSubject,
                     onNavigateToPomodoro = onNavigateToPomodoro
                 )
@@ -79,6 +84,7 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     uiState: HomeUiState,
+    recommendationState: com.mokelab.sisyphus.feature.recommendation.RecommendationUiState,
     onNavigateToSubject: (Long) -> Unit,
     onNavigateToPomodoro: () -> Unit,
     modifier: Modifier = Modifier
@@ -113,7 +119,7 @@ private fun HomeContent(
 
         // Recommendations section - full width
         item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
-            RecommendationsSection()
+            RecommendationsSection(recommendationState = recommendationState)
         }
 
         // Subjects header
@@ -310,32 +316,70 @@ private fun PomodoroQuickCard(
 
 @Composable
 private fun RecommendationsSection(
+    recommendationState: com.mokelab.sisyphus.feature.recommendation.RecommendationUiState,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "智能推荐",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+    when {
+        recommendationState.isLoading -> {
+            Card(
+                modifier = modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Sky500
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "生成推荐中...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        recommendationState.recommendations != null -> {
+            RecommendationCard(
+                result = recommendationState.recommendations!!,
+                onItemClick = { /* TODO: Navigate to item */ },
+                modifier = modifier
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "基于你的学习记录，为你推荐最佳学习内容",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            // TODO: Implement actual recommendations based on FSRS algorithm
+        }
+        else -> {
+            Card(
+                modifier = modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "智能推荐",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "添加学科和学习记录后，将为你生成个性化推荐",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }

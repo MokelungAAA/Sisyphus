@@ -31,6 +31,9 @@ dependencies {
     // Core module
     implementation(project(":core"))
 
+    // Feature modules
+    implementation(project(":feature:recommendation"))
+
     // Kotlin
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
