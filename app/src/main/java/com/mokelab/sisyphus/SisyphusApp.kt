@@ -8,6 +8,7 @@ import com.mokelab.sisyphus.feature.exam.ExamModule
 import com.mokelab.sisyphus.feature.home.HomeModule
 import com.mokelab.sisyphus.feature.pomodoro.PomodoroModule
 import com.mokelab.sisyphus.feature.nlp.nlpModule
+import com.mokelab.sisyphus.feature.recommendation.recommendationModule
 import com.mokelab.sisyphus.feature.reading.ReadingModule
 import com.mokelab.sisyphus.feature.review.ReviewModule
 import com.mokelab.sisyphus.feature.subject.SubjectModule
@@ -32,7 +33,8 @@ class SisyphusApp : Application() {
                 *ExamModule().modules().toTypedArray(),
                 *ReadingModule().modules().toTypedArray(),
                 *ReviewModule().modules().toTypedArray(),
-                nlpModule
+                nlpModule,
+                recommendationModule
             )
         }
     }
