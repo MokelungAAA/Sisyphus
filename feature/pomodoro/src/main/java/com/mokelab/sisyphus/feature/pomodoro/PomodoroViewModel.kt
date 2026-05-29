@@ -28,7 +28,10 @@ data class PomodoroUiState(
     val selectedPreset: PomodoroPreset = PomodoroPresets.CLASSIC,
     val showSettings: Boolean = false,
     val showPresetSelector: Boolean = false,
-    val isBound: Boolean = false
+    val isBound: Boolean = false,
+    val isOnBreak: Boolean = false,
+    val showCompletionAnimation: Boolean = false,
+    val showGroupCompleteAnimation: Boolean = false
 )
 
 class PomodoroViewModel(
@@ -51,6 +54,9 @@ class PomodoroViewModel(
             pomodoroService?.setOnCompleteListener {
                 onTimerComplete()
             }
+            pomodoroService?.setOnGroupCompleteListener {
+                onGroupComplete()
+            }
 
             // Sync state from service
             pomodoroService?.let { svc ->
@@ -61,7 +67,9 @@ class PomodoroViewModel(
                                 isRunning = serviceState.isRunning,
                                 isPaused = serviceState.isPaused,
                                 remainingSeconds = serviceState.remainingSeconds,
-                                completedSessions = serviceState.completedSessions
+                                totalSeconds = serviceState.durationMinutes * 60,
+                                completedSessions = serviceState.completedSessions,
+                                isOnBreak = serviceState.isOnBreak
                             )
                         }
                     }
@@ -148,7 +156,26 @@ class PomodoroViewModel(
                     createdAt = now
                 )
             )
+
+            // Show completion animation
+            _uiState.update { it.copy(showCompletionAnimation = true) }
         }
+    }
+
+    private fun onGroupComplete() {
+        _uiState.update { it.copy(showGroupCompleteAnimation = true) }
+    }
+
+    fun dismissCompletionAnimation() {
+        _uiState.update { it.copy(showCompletionAnimation = false) }
+    }
+
+    fun dismissGroupCompleteAnimation() {
+        _uiState.update { it.copy(showGroupCompleteAnimation = false) }
+    }
+
+    fun startBreak(isLongBreak: Boolean) {
+        pomodoroService?.startBreak(isLongBreak)
     }
 
     fun showSettings() {

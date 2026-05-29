@@ -71,3 +71,9 @@ val DarkOnSurfaceVariant = Color(0xFF94A3B8)
 
 val DarkOutline = Color(0xFF475569)
 val DarkOutlineVariant = Color(0xFF334155)
+
+// Pomodoro colors
+val PomodoroRed = Color(0xFFEF4444)
+val PomodoroRedLight = Color(0xFFFCA5A5)
+val PomodoroGreen = Color(0xFF22C55E)
+val PomodoroGreenLight = Color(0xFF86EFAC)
