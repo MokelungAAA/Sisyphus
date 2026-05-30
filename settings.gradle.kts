@@ -1,5 +1,11 @@
 pluginManagement {
     repositories {
+        // 使用阿里云镜像加速（国内）- 优先使用
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/central") }
+        maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        // 保留原始仓库作为备用（如果镜像失败）
         google {
             content {
                 includeGroupByRegex("com\\.android.*")
@@ -15,6 +21,10 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        // 使用阿里云镜像加速（国内）
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/central") }
+        // 保留原始仓库作为备用
         google()
         mavenCentral()
     }

@@ -36,8 +36,14 @@ class Converters {
         return value?.name
     }
 
+    /**
+     * 字符串转 ReadingType 枚举
+     * 安全处理：数据库中存储的值无效时返回 null，而非抛出 IllegalArgumentException
+     */
     @TypeConverter
     fun toReadingType(value: String?): ReadingType? {
-        return value?.let { ReadingType.valueOf(it) }
+        return value?.let { name ->
+            ReadingType.entries.find { it.name == name }
+        }
     }
 }

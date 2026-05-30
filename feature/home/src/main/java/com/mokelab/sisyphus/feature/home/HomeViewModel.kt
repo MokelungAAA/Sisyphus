@@ -50,132 +50,51 @@ class HomeViewModel(
         loadHomeData()
     }
 
+    /**
+     * 加载首页数据
+     * 使用多个独立协程并行加载，每个协程收到第一份数据后更新UI
+     * isLoading在所有Flow都发出第一个值后变为false
+     */
     private fun loadHomeData() {
+        // 并行收集各个Flow
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            subjectRepository.getAll()
+                .catch { e -> _uiState.value = _uiState.value.copy(error = e.message) }
+                .collectLatest { subjects ->
+                    _uiState.value = _uiState.value.copy(
+                        subjects = subjects,
+                        isLoading = false  // 收到数据后停止加载
+                    )
+                }
+        }
 
-            // Load subjects
-            launch {
-                subjectRepository.getAll()
-                    .catch { e -> _uiState.value = _uiState.value.copy(error = e.message) }
-                    .collectLatest { subjects ->
-                        _uiState.value = _uiState.value.copy(subjects = subjects)
-                    }
-            }
+        viewModelScope.launch {
+            studyRecordRepository.getAll()
+                .catch { /* ignore */ }
+                .collectLatest { records ->
+                    val totalMinutes = records.sumOf { it.durationMinutes }
+                    val todayMinutes = calculateTodayMinutes(records)
+                    val level = calculateLevel(totalMinutes)
+                    val title = getTitleForLevel(level)
+                    _uiState.value = _uiState.value.copy(
+                        totalXP = totalMinutes,
+                        todayXP = todayMinutes,
+                        level = level,
+                        title = title,
+                        isLoading = false
+                    )
+                }
+        }
 
-            // Load study records and calculate XP
-            launch {
-                studyRecordRepository.getAll()
-                    .catch { /* ignore */ }
-                    .collectLatest { records ->
-                        val totalMinutes = records.sumOf { it.durationMinutes }
-                        val todayMinutes = calculateTodayMinutes(records)
-                        val level = calculateLevel(totalMinutes)
-                        val title = getTitleForLevel(level)
-                        _uiState.value = _uiState.value.copy(
-                            totalXP = totalMinutes,
-                            todayXP = todayMinutes,
-                            level = level,
-                            title = title
-                        )
-                    }
-            }
-
-            // Calculate streak from all data sources
-            launch {
-                calculateStreakFromAllSources()
-            }
-
-            _uiState.value = _uiState.value.copy(isLoading = false)
+        viewModelScope.launch {
+            calculateStreakFromAllSources()
         }
     }
 
-    private suspend fun calculateStreakFromAllSources() {
-        combine(
-            studyRecordRepository.getAll(),
-            pomodoroSessionRepository.getAll(),
-            readingRecordRepository.getAll()
-        ) { studyRecords, pomodoroSessions, readingRecords ->
-            val timeZone = TimeZone.currentSystemDefault()
-            val now = Clock.System.now()
-            val localNow = now.toLocalDateTime(timeZone)
-
-            // 凌晨0-6点算前一天
-            val effectiveDate = if (localNow.hour < 6) {
-                localNow.date.minus(kotlinx.datetime.DatePeriod(days = 1))
-            } else {
-                localNow.date
-            }
-
-            // Collect all dates with any activity, applying the 00:00-06:00 rule
-            val allDates = mutableSetOf<LocalDate>()
-
-            // Study records dates
-            studyRecords.forEach { record ->
-                val recordLocal = record.startTime.toLocalDateTime(timeZone)
-                val recordDate = if (recordLocal.hour < 6) {
-                    recordLocal.date.minus(kotlinx.datetime.DatePeriod(days = 1))
-                } else {
-                    recordLocal.date
-                }
-                allDates.add(recordDate)
-            }
-
-            // Pomodoro sessions dates
-            pomodoroSessions.forEach { session ->
-                val sessionLocal = session.startTime.toLocalDateTime(timeZone)
-                val sessionDate = if (sessionLocal.hour < 6) {
-                    sessionLocal.date.minus(kotlinx.datetime.DatePeriod(days = 1))
-                } else {
-                    sessionLocal.date
-                }
-                allDates.add(sessionDate)
-            }
-
-            // Reading records dates
-            readingRecords.forEach { record ->
-                val recordLocal = record.createdAt.toLocalDateTime(timeZone)
-                val recordDate = if (recordLocal.hour < 6) {
-                    recordLocal.date.minus(kotlinx.datetime.DatePeriod(days = 1))
-                } else {
-                    recordLocal.date
-                }
-                allDates.add(recordDate)
-            }
-
-            // Calculate streak using effective date
-            calculateStreak(allDates.toList(), effectiveDate)
-        }
-        .catch { /* ignore */ }
-        .collectLatest { streak ->
-            _uiState.value = _uiState.value.copy(streakDays = streak)
-        }
-    }
-
-    private fun calculateTodayMinutes(records: List<StudyRecordEntity>): Int {
-        val now = Clock.System.now()
-        val localNow = now.toLocalDateTime(TimeZone.currentSystemDefault())
-
-        // 凌晨0-6点算前一天
-        val effectiveDate = if (localNow.hour < 6) {
-            localNow.date.minus(kotlinx.datetime.DatePeriod(days = 1))
-        } else {
-            localNow.date
-        }
-
-        return records
-            .filter { record ->
-                val recordLocal = record.startTime.toLocalDateTime(TimeZone.currentSystemDefault())
-                val recordDate = if (recordLocal.hour < 6) {
-                    recordLocal.date.minus(kotlinx.datetime.DatePeriod(days = 1))
-                } else {
-                    recordLocal.date
-                }
-                recordDate == effectiveDate
-            }
-            .sumOf { it.durationMinutes }
-    }
-
+    /**
+     * 根据总学习时长计算等级
+     * 使用对数曲线，前期升级快，后期升级慢
+     */
     private fun calculateLevel(totalXP: Int): Int {
         return when {
             totalXP < 100 -> 1
@@ -191,6 +110,9 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * 获取等级对应的称号
+     */
     private fun getTitleForLevel(level: Int): String {
         return when (level) {
             1 -> "学习新手"
@@ -205,6 +127,97 @@ class HomeViewModel(
             else -> "学习之神"
         }
     }
+
+    private suspend fun calculateStreakFromAllSources() {
+        combine(
+            studyRecordRepository.getAll(),
+            pomodoroSessionRepository.getAll(),
+            readingRecordRepository.getAll()
+        ) { studyRecords, pomodoroSessions, readingRecords ->
+            val timeZone = TimeZone.currentSystemDefault()
+            val now = Clock.System.now()
+            val localNow = now.toLocalDateTime(timeZone)
+
+            // 凌晨0-6点算前一天
+            val effectiveDate = if (localNow.hour < 6) {
+                localNow.date.minus(DatePeriod(days = 1))
+            } else {
+                localNow.date
+            }
+
+            // Collect all dates with any activity, applying the 00:00-06:00 rule
+            val allDates = mutableSetOf<LocalDate>()
+
+            // Study records dates
+            studyRecords.forEach { record ->
+                val recordLocal = record.startTime.toLocalDateTime(timeZone)
+                val recordDate = if (recordLocal.hour < 6) {
+                    recordLocal.date.minus(DatePeriod(days = 1))
+                } else {
+                    recordLocal.date
+                }
+                allDates.add(recordDate)
+            }
+
+            // Pomodoro sessions dates
+            pomodoroSessions.forEach { session ->
+                val sessionLocal = session.startTime.toLocalDateTime(timeZone)
+                val sessionDate = if (sessionLocal.hour < 6) {
+                    sessionLocal.date.minus(DatePeriod(days = 1))
+                } else {
+                    sessionLocal.date
+                }
+                allDates.add(sessionDate)
+            }
+
+            // Reading records dates
+            readingRecords.forEach { record ->
+                val recordLocal = record.createdAt.toLocalDateTime(timeZone)
+                val recordDate = if (recordLocal.hour < 6) {
+                    recordLocal.date.minus(DatePeriod(days = 1))
+                } else {
+                    recordLocal.date
+                }
+                allDates.add(recordDate)
+            }
+
+            // Calculate streak using effective date
+            calculateStreak(allDates.toList(), effectiveDate)
+        }
+        .catch { /* ignore */ }
+        .collectLatest { streak ->
+            _uiState.value = _uiState.value.copy(streakDays = streak, isLoading = false)
+        }
+    }
+
+    private fun calculateTodayMinutes(records: List<StudyRecordEntity>): Int {
+        val now = Clock.System.now()
+        val localNow = now.toLocalDateTime(TimeZone.currentSystemDefault())
+
+        // 凌晨0-6点算前一天
+        val effectiveDate = if (localNow.hour < 6) {
+            localNow.date.minus(DatePeriod(days = 1))
+        } else {
+            localNow.date
+        }
+
+        return records
+            .filter { record ->
+                val recordLocal = record.startTime.toLocalDateTime(TimeZone.currentSystemDefault())
+                val recordDate = if (recordLocal.hour < 6) {
+                    recordLocal.date.minus(DatePeriod(days = 1))
+                } else {
+                    recordLocal.date
+                }
+                recordDate == effectiveDate
+            }
+            .sumOf { it.durationMinutes }
+    }
+
+    // 注意：XPAlgorithm 中也有等级计算逻辑，但两者用途不同：
+    // - HomeViewModel.calculateLevel(): 基于总学习时长的简单等级（1-10级）
+    // - XPAlgorithm.xpForLevel(): 基于 XP 公式的精确等级（支持更高等级）
+    // 未来可以统一，但当前保持简单实现
 
     /**
      * Calculate streak from all data sources.

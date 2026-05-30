@@ -1,7 +1,7 @@
 [versions]
 # Kotlin & Compose
 kotlin = "2.0.21"
-agp = "8.7.3"
+agp = "8.13.0"
 compose-bom = "2024.12.01"
 compose-compiler = "1.5.15"
 
@@ -33,6 +33,9 @@ work = "2.9.0"
 material3 = "1.3.1"
 vico = "2.0.0"
 coil = "2.7.0"
+
+# Security
+security-crypto = "1.1.0-alpha06"
 
 # Testing
 junit = "4.13.2"
@@ -90,6 +93,9 @@ vico-compose = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = 
 
 # Image Loading
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+
+# Security
+security-crypto = { module = "androidx.security:security-crypto", version.ref = "security-crypto" }
 
 # Testing
 junit = { module = "junit:junit", version.ref = "junit" }

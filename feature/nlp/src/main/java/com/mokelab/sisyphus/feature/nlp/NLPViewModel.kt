@@ -1,6 +1,5 @@
 package com.mokelab.sisyphus.feature.nlp
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,11 +18,13 @@ data class NLPInputUiState(
     val editedEntities: Map<String, String> = emptyMap()
 )
 
+/**
+ * NLP ViewModel
+ * 通过构造函数注入 NLPManager 单例，确保与 Koin 管理的实例一致
+ */
 class NLPViewModel(
-    private val context: Context
+    private val nlpManager: NLPManager
 ) : ViewModel() {
-
-    private val nlpManager = NLPManager(context)
 
     private val _uiState = MutableStateFlow(NLPInputUiState())
     val uiState: StateFlow<NLPInputUiState> = _uiState.asStateFlow()

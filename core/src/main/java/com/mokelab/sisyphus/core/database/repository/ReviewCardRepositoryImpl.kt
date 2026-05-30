@@ -10,6 +10,9 @@ class ReviewCardRepositoryImpl(
     override fun getByKnowledgePointId(knowledgePointId: Long): Flow<List<ReviewCardEntity>> =
         dao.getByKnowledgePointId(knowledgePointId)
 
+    override fun getByKnowledgePointIds(knowledgePointIds: List<Long>): Flow<List<ReviewCardEntity>> =
+        dao.getByKnowledgePointIds(knowledgePointIds)
+
     override fun getDueCards(): Flow<List<ReviewCardEntity>> = dao.getDueCards()
 
     override fun getAll(): Flow<List<ReviewCardEntity>> = dao.getAll()

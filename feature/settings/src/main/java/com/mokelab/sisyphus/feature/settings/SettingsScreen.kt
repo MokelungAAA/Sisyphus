@@ -31,7 +31,7 @@ fun SettingsScreen(
     themePreferences: ThemePreferences = koinInject(),
     pomodoroPreferences: PomodoroPreferences = koinInject()
 ) {
-    var darkMode by remember { mutableStateOf(themePreferences.isDarkMode()) }
+    val darkMode by themePreferences.isDarkModeFlow.collectAsState()
     var notificationsEnabled by remember { mutableStateOf(true) }
     var showPomodoroSettings by remember { mutableStateOf(false) }
     var workDuration by remember { mutableIntStateOf(pomodoroPreferences.getWorkDuration()) }
@@ -104,7 +104,6 @@ fun SettingsScreen(
                     icon = Icons.Filled.Star,
                     checked = darkMode,
                     onCheckedChange = {
-                        darkMode = it
                         themePreferences.setDarkMode(it)
                     }
                 )

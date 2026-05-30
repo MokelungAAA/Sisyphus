@@ -5,6 +5,11 @@ import kotlinx.coroutines.flow.Flow
 
 interface ReviewCardRepository {
     fun getByKnowledgePointId(knowledgePointId: Long): Flow<List<ReviewCardEntity>>
+    /**
+     * 批量查询多个知识点的复习卡片
+     * 用于技能树等需要批量加载的场景，避免 N+1 查询
+     */
+    fun getByKnowledgePointIds(knowledgePointIds: List<Long>): Flow<List<ReviewCardEntity>>
     fun getDueCards(): Flow<List<ReviewCardEntity>>
     fun getAll(): Flow<List<ReviewCardEntity>>
     suspend fun getById(id: Long): ReviewCardEntity?

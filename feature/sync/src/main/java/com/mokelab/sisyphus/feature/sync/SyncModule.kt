@@ -10,6 +10,6 @@ val syncModule = module {
     single { SyncService(get(), get()) }
     single { ConflictResolver() }
     single { SyncManager(androidContext(), get(), get(), get(), get()) }
-    single { SyncLifecycleObserver(get(), get()) }
+    single { SyncLifecycleObserver(get()) }
     viewModel { SyncViewModel(get(), get(), get(), get(), get()) }
 }

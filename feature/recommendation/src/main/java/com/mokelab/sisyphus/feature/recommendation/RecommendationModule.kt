@@ -11,6 +11,9 @@ val recommendationModule = module {
             studyRecordRepository = get(),
             knowledgePointRepository = get(),
             subjectRepository = get(),
+            sectionRepository = get(),
+            chapterRepository = get(),
+            textbookRepository = get(),
             engine = get()
         )
     }

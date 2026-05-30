@@ -2,10 +2,18 @@ package com.mokelab.sisyphus.feature.sync
 
 /**
  * OneDrive 同步配置
+ *
+ * ⚠️ 警告：CLIENT_ID 当前为占位符，OneDrive 同步功能不可用！
+ * 要启用同步功能，需要：
+ * 1. 在 Azure Portal (https://portal.azure.com) 注册应用
+ * 2. 将 CLIENT_ID 替换为真实的应用 ID
+ * 3. 将 REDIRECT_URI 替换为真实的回调地址
+ *
+ * 在功能就绪前，UI 中应隐藏同步相关入口
  */
 object SyncConfig {
     // Azure AD 应用注册信息
-    // 注意：正式发布前需要在 Azure Portal 注册应用并替换以下值
+    // TODO: 替换为真实的 Azure AD 应用 ID
     const val CLIENT_ID = "YOUR_CLIENT_ID"
     const val REDIRECT_URI = "msauth://com.mokelab.sisyphus/YOUR_SIGNATURE"
 

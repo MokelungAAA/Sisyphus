@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
 
 data class ReviewCardUiState(
     val cards: List<ReviewCardEntity> = emptyList(),
@@ -59,12 +62,18 @@ class ReviewCardViewModel(
         loadStatistics()
     }
 
+    /**
+     * 加载统计数据
+     * 使用本地时区计算今日开始时间，而非 UTC
+     */
     private fun loadStatistics() {
         viewModelScope.launch {
             val totalCount = historyRepository.getTotalReviewCount()
             val lapseCount = historyRepository.getLapseCount()
+            // 使用本地时区计算今日零点，避免 UTC 偏差
             val now = Clock.System.now()
-            val todayStart = now.toEpochMilliseconds() - (now.toEpochMilliseconds() % 86400000L)
+            val today = now.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+            val todayStart = today.atStartOfDayIn(kotlinx.datetime.TimeZone.currentSystemDefault()).toEpochMilliseconds()
             val todayCount = historyRepository.getReviewCountSince(todayStart)
             _uiState.value = _uiState.value.copy(
                 totalReviewCount = totalCount,

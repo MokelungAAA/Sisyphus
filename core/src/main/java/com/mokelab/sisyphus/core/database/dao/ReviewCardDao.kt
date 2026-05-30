@@ -18,6 +18,13 @@ interface ReviewCardDao {
     @Query("SELECT * FROM review_cards WHERE knowledgePointId = :knowledgePointId")
     fun getByKnowledgePointId(knowledgePointId: Long): Flow<List<ReviewCardEntity>>
 
+    /**
+     * 批量查询多个知识点的复习卡片
+     * 用于技能树等需要批量加载的场景，避免 N+1 查询
+     */
+    @Query("SELECT * FROM review_cards WHERE knowledgePointId IN (:knowledgePointIds)")
+    fun getByKnowledgePointIds(knowledgePointIds: List<Long>): Flow<List<ReviewCardEntity>>
+
     @Query("SELECT * FROM review_cards WHERE due <= :now ORDER BY due ASC")
     fun getDueCards(now: Long = System.currentTimeMillis()): Flow<List<ReviewCardEntity>>
 

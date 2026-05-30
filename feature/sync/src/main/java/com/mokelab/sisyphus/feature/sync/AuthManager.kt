@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.util.UUID
 
 /**
  * OAuth 2.0 认证管理器
@@ -30,28 +31,52 @@ class AuthManager(
     }
 
     /**
+     * 当前 OAuth state 参数，用于防止 CSRF 攻击
+     */
+    private var currentOAuthState: String = ""
+
+    /**
      * 构建授权 URL
+     * 包含 state 参数防止 CSRF 攻击
      */
     private fun buildAuthUrl(): String {
         val encodedRedirect = URLEncoder.encode(SyncConfig.REDIRECT_URI, "UTF-8")
         val encodedScopes = URLEncoder.encode(SyncConfig.SCOPES, "UTF-8")
+        // 生成随机 state 参数，回调时验证
+        currentOAuthState = UUID.randomUUID().toString()
         return "${SyncConfig.AUTH_ENDPOINT}" +
             "?client_id=${SyncConfig.CLIENT_ID}" +
             "&response_type=code" +
             "&redirect_uri=$encodedRedirect" +
             "&scope=$encodedScopes" +
-            "&response_mode=query"
+            "&response_mode=query" +
+            "&state=$currentOAuthState"
+    }
+
+    /**
+     * 验证 OAuth state 参数
+     * @return true 如果 state 有效
+     */
+    fun validateOAuthState(state: String): Boolean {
+        return state.isNotEmpty() && state == currentOAuthState
     }
 
     /**
      * 处理回调，用授权码换取 tokens
      */
-    suspend fun handleAuthCallback(code: String): Result<OAuthTokens> = withContext(Dispatchers.IO) {
+    suspend fun handleAuthCallback(code: String, state: String? = null): Result<OAuthTokens> = withContext(Dispatchers.IO) {
+        // 验证 state 参数（如果提供）
+        if (state != null && !validateOAuthState(state)) {
+            return@withContext Result.failure(Exception("OAuth state 验证失败，可能是 CSRF 攻击"))
+        }
+
         try {
             val url = URL(SyncConfig.TOKEN_ENDPOINT)
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+            conn.connectTimeout = 15_000
+            conn.readTimeout = 30_000
             conn.doOutput = true
 
             val body = buildString {
@@ -95,6 +120,8 @@ class AuthManager(
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+            conn.connectTimeout = 15_000
+            conn.readTimeout = 30_000
             conn.doOutput = true
 
             val body = buildString {

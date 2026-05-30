@@ -22,10 +22,11 @@ class PomodoroPreferences(context: Context) {
 
     /**
      * 设置工作时长（分钟）
+     * 限制范围：1-120 分钟，防止无效输入
      */
     fun setWorkDuration(minutes: Int) {
         prefs.edit()
-            .putInt(KEY_WORK_DURATION, minutes)
+            .putInt(KEY_WORK_DURATION, minutes.coerceIn(MIN_WORK_DURATION, MAX_WORK_DURATION))
             .apply()
     }
 
@@ -38,10 +39,11 @@ class PomodoroPreferences(context: Context) {
 
     /**
      * 设置休息时长（分钟）
+     * 限制范围：1-60 分钟，防止无效输入
      */
     fun setBreakDuration(minutes: Int) {
         prefs.edit()
-            .putInt(KEY_BREAK_DURATION, minutes)
+            .putInt(KEY_BREAK_DURATION, minutes.coerceIn(MIN_BREAK_DURATION, MAX_BREAK_DURATION))
             .apply()
     }
 
@@ -54,10 +56,11 @@ class PomodoroPreferences(context: Context) {
 
     /**
      * 设置长休息时长（分钟）
+     * 限制范围：1-60 分钟，防止无效输入
      */
     fun setLongBreakDuration(minutes: Int) {
         prefs.edit()
-            .putInt(KEY_LONG_BREAK_DURATION, minutes)
+            .putInt(KEY_LONG_BREAK_DURATION, minutes.coerceIn(MIN_BREAK_DURATION, MAX_BREAK_DURATION))
             .apply()
     }
 
@@ -70,10 +73,11 @@ class PomodoroPreferences(context: Context) {
 
     /**
      * 设置长休息前的会话数
+     * 限制范围：1-10，防止无效输入
      */
     fun setSessionsBeforeLongBreak(sessions: Int) {
         prefs.edit()
-            .putInt(KEY_SESSIONS_BEFORE_LONG_BREAK, sessions)
+            .putInt(KEY_SESSIONS_BEFORE_LONG_BREAK, sessions.coerceIn(1, 10))
             .apply()
     }
 
@@ -88,5 +92,11 @@ class PomodoroPreferences(context: Context) {
         private const val DEFAULT_BREAK_DURATION = 5
         private const val DEFAULT_LONG_BREAK_DURATION = 15
         private const val DEFAULT_SESSIONS_BEFORE_LONG_BREAK = 4
+
+        // 输入范围限制
+        private const val MIN_WORK_DURATION = 1
+        private const val MAX_WORK_DURATION = 120
+        private const val MIN_BREAK_DURATION = 1
+        private const val MAX_BREAK_DURATION = 60
     }
 }

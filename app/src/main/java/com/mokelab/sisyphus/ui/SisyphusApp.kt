@@ -1,23 +1,35 @@
 package com.mokelab.sisyphus.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -52,8 +64,8 @@ import org.koin.compose.koinInject
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     data object Home : Screen("home", "首页", Icons.Default.Home)
-    data object Insights : Screen("insights", "洞察", Icons.Default.Favorite)
-    data object Search : Screen("search", "搜索", Icons.Default.Search)
+    data object Insights : Screen("insights", "数据", Icons.Default.Favorite)
+    data object Pomodoro : Screen("pomodoro_tab", "番茄", Icons.Default.Star)
     data object Settings : Screen("settings", "设置", Icons.Default.Settings)
     data object ExamStats : Screen("exam_stats", "考试统计", Icons.Default.Favorite)
 }
@@ -61,7 +73,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 val bottomNavItems = listOf(
     Screen.Home,
     Screen.Insights,
-    Screen.Search,
+    Screen.Pomodoro,
     Screen.Settings,
 )
 
@@ -70,7 +82,6 @@ fun SisyphusApp() {
     val navController = rememberNavController()
     val lifecycleOwner = LocalLifecycleOwner.current
     val syncLifecycleObserver: SyncLifecycleObserver = koinInject()
-    val coroutineScope = rememberCoroutineScope()
 
     // 注册同步生命周期观察者
     DisposableEffect(lifecycleOwner, syncLifecycleObserver) {
@@ -82,25 +93,58 @@ fun SisyphusApp() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
+            // 悬浮底部导航栏
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp
+            ) {
+                Box {
+                    NavigationBar(
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        modifier = Modifier.height(64.dp)
+                    ) {
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentDestination = navBackStackEntry?.destination
 
-                bottomNavItems.forEach { screen ->
-                    NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.title) },
-                        label = { Text(screen.title) },
-                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                        onClick = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                        bottomNavItems.forEach { screen ->
+                            NavigationBarItem(
+                                icon = { Icon(screen.icon, contentDescription = screen.title) },
+                                label = { Text(screen.title, style = MaterialTheme.typography.labelSmall) },
+                                selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                onClick = {
+                                    navController.navigate(screen.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            )
                         }
-                    )
+                    }
+
+                    // 加号按钮，在番茄钟上方
+                    FloatingActionButton(
+                        onClick = { /* TODO: 弹出数据录入界面 */ },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 0.dp)
+                            .size(48.dp),
+                        shape = CircleShape,
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "添加记录",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
         }
@@ -125,8 +169,12 @@ fun SisyphusApp() {
                     onNavigateToSkillTree = { navController.navigate("skilltree") }
                 )
             }
-            composable(Screen.Search.route) {
-                SearchScreen(navController = navController)
+            composable(Screen.Pomodoro.route) {
+                val viewModel: PomodoroViewModel = koinViewModel()
+                PomodoroScreen(
+                    viewModel = viewModel,
+                    onNavigateToHistory = { navController.navigate("log") }
+                )
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -14,8 +16,8 @@ android {
         applicationId = "com.mokelab.sisyphus"
         minSdk = 29
         targetSdk = 35
-        versionCode = 31
-        versionName = "1.0.0"
+        versionCode = 1
+        versionName = "0.01"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -23,9 +25,18 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("${rootProject.projectDir}/release.jks")
-            storePassword = "Sisyphus2026"
+            // 从 local.properties 读取签名密码，避免硬编码在版本控制中
+            // 在 local.properties 中添加：
+            //   SIGNING_STORE_PASSWORD=你的keystore密码
+            //   SIGNING_KEY_PASSWORD=你的key密码
+            val localPropsFile = rootProject.file("local.properties")
+            val props = Properties()
+            if (localPropsFile.exists()) {
+                props.load(localPropsFile.inputStream())
+            }
+            storePassword = props.getProperty("SIGNING_STORE_PASSWORD", "")
             keyAlias = "sisyphus"
-            keyPassword = "Sisyphus2026"
+            keyPassword = props.getProperty("SIGNING_KEY_PASSWORD", "")
         }
     }
 

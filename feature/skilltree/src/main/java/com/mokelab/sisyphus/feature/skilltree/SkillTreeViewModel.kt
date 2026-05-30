@@ -57,9 +57,16 @@ class SkillTreeViewModel(
 
                             for (section in sections) {
                                 val kps = knowledgePointRepository.getBySectionId(section.id).first()
+                                // 批量查询所有知识点的复习卡片，避免 N+1 查询问题
+                                val allKpIds = kps.map { it.id }
+                                val allCards = if (allKpIds.isNotEmpty()) {
+                                    reviewCardRepository.getByKnowledgePointIds(allKpIds).first()
+                                } else {
+                                    emptyList()
+                                }
+                                val cardMap = allCards.groupBy { it.knowledgePointId }
                                 val knowledgeNodes = kps.map { kp ->
-                                    val cards = reviewCardRepository.getByKnowledgePointId(kp.id).first()
-                                    val card = cards.firstOrNull()
+                                    val card = cardMap[kp.id]?.firstOrNull()
                                     val masteryLevel = classifyMastery(card?.state, card?.stability)
                                     when (masteryLevel) {
                                         MasteryLevel.MASTERED -> mastered++

@@ -88,7 +88,9 @@ fun SisyphusTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
+            // 安全转换：在 Compose Preview 或测试环境中 context 可能不是 Activity
+            val activity = view.context as? Activity ?: return@SideEffect
+            val window = activity.window
             window.statusBarColor = colorScheme.primary.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }

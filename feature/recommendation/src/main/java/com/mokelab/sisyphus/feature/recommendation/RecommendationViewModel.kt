@@ -3,10 +3,13 @@ package com.mokelab.sisyphus.feature.recommendation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mokelab.sisyphus.core.database.entity.ReviewCardEntity
+import com.mokelab.sisyphus.core.database.repository.ChapterRepository
 import com.mokelab.sisyphus.core.database.repository.KnowledgePointRepository
 import com.mokelab.sisyphus.core.database.repository.ReviewCardRepository
+import com.mokelab.sisyphus.core.database.repository.SectionRepository
 import com.mokelab.sisyphus.core.database.repository.StudyRecordRepository
 import com.mokelab.sisyphus.core.database.repository.SubjectRepository
+import com.mokelab.sisyphus.core.database.repository.TextbookRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +38,9 @@ class RecommendationViewModel(
     private val studyRecordRepository: StudyRecordRepository,
     private val knowledgePointRepository: KnowledgePointRepository,
     private val subjectRepository: SubjectRepository,
+    private val sectionRepository: SectionRepository,
+    private val chapterRepository: ChapterRepository,
+    private val textbookRepository: TextbookRepository,
     private val engine: RecommendationEngine
 ) : ViewModel() {
 
@@ -61,13 +67,11 @@ class RecommendationViewModel(
                 val subjectMap = subjects.associateBy { it.id }
 
                 // 转换为推荐项
+                // 通过 section -> chapter -> textbook -> subject 的路径获取 subjectId
                 val fsrsItems = allCards.mapNotNull { card ->
                     val knowledgePoint = knowledgePointRepository.getById(card.knowledgePointId)
                     val subjectId = knowledgePoint?.sectionId?.let { sectionId ->
-                        // 需要通过section -> chapter -> textbook -> subject的路径获取subjectId
-                        // 这里简化处理，假设knowledgePoint有直接的subjectId
-                        // 实际上需要查询数据库获取
-                        null // TODO: 实现正确的subjectId获取
+                        resolveSubjectId(sectionId)
                     }
 
                     if (subjectId != null) {
@@ -128,6 +132,19 @@ class RecommendationViewModel(
                 _uiState.update { it.copy(isLoading = false) }
             }
         }
+    }
+
+    /**
+     * 通过 section -> chapter -> textbook -> subject 路径解析 subjectId
+     *
+     * @param sectionId 节 ID
+     * @return 学科 ID，如果路径不完整则返回 null
+     */
+    private suspend fun resolveSubjectId(sectionId: Long): Long? {
+        val section = sectionRepository.getById(sectionId) ?: return null
+        val chapter = chapterRepository.getById(section.chapterId) ?: return null
+        val textbook = textbookRepository.getById(chapter.textbookId) ?: return null
+        return textbook.subjectId
     }
 
     /**

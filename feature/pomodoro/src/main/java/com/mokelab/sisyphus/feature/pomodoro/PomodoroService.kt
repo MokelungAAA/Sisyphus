@@ -136,14 +136,31 @@ class PomodoroService : Service() {
         updateNotification()
     }
 
+    /**
+     * 开始倒计时
+     * 使用绝对时间计算剩余秒数，避免 delay() 的时间漂移问题
+     */
     private fun startCountdown() {
         updateFloatingWindow()
         updateNotification()
 
         timerJob = serviceScope.launch {
-            while (_state.value.remainingSeconds > 0) {
-                delay(1000)
-                _state.update { it.copy(remainingSeconds = it.remainingSeconds - 1) }
+            val startTime = System.currentTimeMillis()
+            val totalMillis = _state.value.remainingSeconds * 1000L
+
+            while (true) {
+                delay(200) // 每 200ms 更新一次 UI，更流畅
+                val elapsed = System.currentTimeMillis() - startTime
+                val remaining = ((totalMillis - elapsed) / 1000).toInt()
+
+                if (remaining <= 0) {
+                    _state.update { it.copy(remainingSeconds = 0) }
+                    updateFloatingWindow()
+                    updateNotification()
+                    break
+                }
+
+                _state.update { it.copy(remainingSeconds = remaining) }
                 updateFloatingWindow()
                 updateNotification()
             }

@@ -2,6 +2,8 @@ package com.mokelab.sisyphus.feature.sync
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
@@ -19,13 +21,25 @@ data class OAuthTokens(
 
 /**
  * Token 存储管理
- * 注意：生产环境应使用 EncryptedSharedPreferences
+ * 使用 EncryptedSharedPreferences 加密存储 OAuth token，防止 root 设备读取
  */
 class TokenStorage(context: Context) {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences(
-        "sync_tokens", Context.MODE_PRIVATE
-    )
+    private val prefs: SharedPreferences = try {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        EncryptedSharedPreferences.create(
+            context,
+            "sync_tokens",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } catch (e: Exception) {
+        // 降级：如果 EncryptedSharedPreferences 不可用，使用普通 SharedPreferences
+        context.getSharedPreferences("sync_tokens", Context.MODE_PRIVATE)
+    }
 
     private val json = Json { ignoreUnknownKeys = true }
 

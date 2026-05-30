@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 
 /**
  * NLPViewModel工厂
- * 用于注入Context依赖
+ * 使用 Koin 获取 NLPManager 单例
  */
 class NLPViewModelFactory(
     private val context: Context
@@ -14,7 +14,9 @@ class NLPViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(NLPViewModel::class.java)) {
-            return NLPViewModel(context) as T
+            // 通过 Koin 获取 NLPManager 单例
+            val nlpManager = org.koin.java.KoinJavaComponent.get<NLPManager>(NLPManager::class.java)
+            return NLPViewModel(nlpManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

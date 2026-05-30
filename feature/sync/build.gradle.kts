@@ -42,5 +42,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.koin.androidx.compose)
     implementation(libs.kotlinx.serialization.json)
+    // EncryptedSharedPreferences 支持
+    implementation(libs.security.crypto)
     debugImplementation(libs.compose.ui.tooling)
 }

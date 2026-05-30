@@ -40,7 +40,11 @@ class FloatingWindowManager(private val context: Context) :
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateRegistryController.savedStateRegistry
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    /**
+     * 协程作用域，用于手势检测和动画
+     * 使用 var 而非 val，以便在 hide() 取消后 show() 时重新创建
+     */
+    private var scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     // State exposed to Compose
     private val _progress = mutableFloatStateOf(0f)
@@ -61,8 +65,18 @@ class FloatingWindowManager(private val context: Context) :
     private var downX = 0f
     private var downY = 0f
 
+    /**
+     * 显示悬浮窗
+     * 如果 scope 已被取消（之前调用过 hide），则重新创建
+     */
     fun show() {
         if (floatingView != null) return
+
+        // 重新创建 scope，确保 hide() 后再次 show() 能正常工作
+        val job = scope.coroutineContext[Job]
+        if (job == null || job.isCancelled) {
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        }
 
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
@@ -98,6 +112,10 @@ class FloatingWindowManager(private val context: Context) :
         lifecycleRegistry.currentState = Lifecycle.State.RESUMED
     }
 
+    /**
+     * 隐藏悬浮窗并释放资源
+     * 注意：cancel scope 后，show() 会重新创建 scope，确保可重复使用
+     */
     fun hide() {
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         floatingView?.let { windowManager.removeView(it) }

@@ -51,3 +51,14 @@
 # Compose
 -keep class androidx.compose.** { *; }
 -keep class * extends androidx.compose.runtime.Composer { *; }
+
+# Google Tink (used by security-crypto)
+-dontwarn com.google.errorprone.annotations.**
+-keep class com.google.crypto.tink.** { *; }
+
+# Missing classes from dependencies
+-dontwarn javax.annotation.**
+-dontwarn org.checkerframework.**
+-dontwarn org.codehaus.mojo.animal_sniffer.**
+-dontwarn com.google.api.client.http.**
+-dontwarn org.joda.time.**
